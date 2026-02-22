@@ -1,0 +1,104 @@
+import SearchBar from '../components/search-bar'
+import MovieCard from '../components/movie-card'
+import MovieDetail from '../components/movie-detail'
+import LoadingSpinner from '../components/loading-spinner'
+import MovieGrid from '../components/movie-grid'
+import ApiKeyWarning from '../components/api-key-warning'
+import { TrendingUp } from 'lucide-react'
+import { useHome } from '../hooks/use-home'
+
+export default function Home() {
+  const {
+    search,
+    trending,
+    selectedMovie,
+    hasApiKey,
+    getCardStatus,
+    handleSearch,
+    handleReset,
+    selectMovie,
+    clearSelection
+  } = useHome()
+
+  return (
+    <div className="p-6 pt-10">
+      <h1 className="text-3xl font-bold text-white mb-6">Discover movies</h1>
+
+      {!hasApiKey && <ApiKeyWarning />}
+
+      {/* Header with Trending title and Search */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={20} className="text-blue-400" />
+          <h2 className="text-lg font-semibold text-white">Trending this week</h2>
+        </div>
+        <div>
+          <SearchBar onSearch={handleSearch} onReset={handleReset} />
+        </div>
+      </div>
+
+      {/* Loading state */}
+      {search.loading && <LoadingSpinner className="mt-20" />}
+
+      {/* Search Results */}
+      {!search.loading && search.searched && search.results.length > 0 && (
+        <>
+          <h2 className="text-lg font-semibold text-white mt-8 mb-4">Search results</h2>
+          <MovieGrid>
+            {search.results.map((movie) => (
+              <MovieCard
+                key={movie.id}
+                title={movie.title}
+                year={movie.year}
+                posterUrl={movie.posterUrl}
+                status={getCardStatus(null)} // MovieSearchItem lacks imdbId
+                onClick={() => selectMovie(movie.id)}
+              />
+            ))}
+          </MovieGrid>
+        </>
+      )}
+
+      {/* Empty / error state */}
+      {!search.loading && search.searched && search.results.length === 0 && (
+        <p className="text-zinc-500 text-center mt-12">{search.error || 'No movies found'}</p>
+      )}
+
+      {/* Trending section — shown when no search is active */}
+      {!search.searched && (
+        <div className="mt-8">
+          {trending.loading && <LoadingSpinner className="mt-12" />}
+
+          {!trending.loading && trending.movies.length > 0 && (
+            <MovieGrid>
+              {trending.movies.map((movie) => (
+                <MovieCard
+                  key={movie.tmdbId}
+                  title={movie.title}
+                  year={movie.year}
+                  posterUrl={movie.posterUrl}
+                  rating={movie.rating}
+                  status={getCardStatus(movie.imdbId)}
+                  onClick={movie.imdbId ? () => selectMovie(movie.tmdbId, movie.imdbId) : undefined}
+                />
+              ))}
+            </MovieGrid>
+          )}
+
+          {!trending.loading && trending.movies.length === 0 && (
+            <p className="text-zinc-500 text-sm">Could not load trending movies.</p>
+          )}
+        </div>
+      )}
+
+      {/* Detail modal */}
+      {selectedMovie && (
+        <MovieDetail
+          tmdbId={selectedMovie.tmdbId}
+          imdbId={selectedMovie.imdbId}
+          onClose={clearSelection}
+        />
+      )}
+    </div>
+  )
+}
