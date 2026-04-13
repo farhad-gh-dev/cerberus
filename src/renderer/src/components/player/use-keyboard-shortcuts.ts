@@ -14,6 +14,7 @@ interface KeyboardShortcutDeps {
   showSpeedMenu: boolean
   setShowSpeedMenu: (show: boolean) => void
   videoRef: React.RefObject<HTMLVideoElement | null>
+  cycleSubtitleTrack: () => void
 }
 
 export function useKeyboardShortcuts({
@@ -28,7 +29,8 @@ export function useKeyboardShortcuts({
   isFullscreen,
   showSpeedMenu,
   setShowSpeedMenu,
-  videoRef
+  videoRef,
+  cycleSubtitleTrack
 }: KeyboardShortcutDeps) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent): void => {
@@ -90,6 +92,10 @@ export function useKeyboardShortcuts({
             video.currentTime = Math.min(video.duration, video.currentTime + FRAME_DURATION)
           }
           break
+        case 'c':
+          cycleSubtitleTrack()
+          resetControlsTimer()
+          break
       }
     }
 
@@ -107,6 +113,7 @@ export function useKeyboardShortcuts({
     isFullscreen,
     showSpeedMenu,
     setShowSpeedMenu,
-    videoRef
+    videoRef,
+    cycleSubtitleTrack
   ])
 }

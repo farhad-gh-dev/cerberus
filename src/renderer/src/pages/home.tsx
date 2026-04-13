@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react'
 import SearchBar from '../components/search-bar'
 import MovieCard from '../components/movie-card'
 import MovieDetail from '../components/movie-detail'
@@ -17,8 +18,37 @@ export default function Home() {
     handleSearch,
     handleReset,
     selectMovie,
-    clearSelection
+    clearSelection,
+    loadMoreTrending
   } = useHome()
+
+  const observerRef = useRef<IntersectionObserver | null>(null)
+
+  // Callback ref: fires whenever the sentinel <div> mounts or unmounts
+  const sentinelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      // Tear down previous observer
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+        observerRef.current = null
+      }
+      if (!node) return
+
+      const root = document.querySelector('main')
+      if (!root) return
+
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            loadMoreTrending()
+          }
+        },
+        { root, rootMargin: '400px' }
+      )
+      observerRef.current.observe(node)
+    },
+    [loadMoreTrending]
+  )
 
   return (
     <div className="p-6 pt-10">
@@ -88,6 +118,10 @@ export default function Home() {
           {!trending.loading && trending.movies.length === 0 && (
             <p className="text-zinc-500 text-sm">Could not load trending movies.</p>
           )}
+
+          {/* Infinite scroll sentinel */}
+          {trending.loadingMore && <LoadingSpinner className="mt-8" />}
+          {trending.hasMore && !trending.loading && <div ref={sentinelRef} className="h-4" />}
         </div>
       )}
 

@@ -19,6 +19,8 @@ import { getMovieByImdbId, addMovie, updateMoviePath } from '../db'
 
 export const VIDEO_EXTENSIONS = new Set(['.mp4', '.mkv', '.avi', '.mov', '.webm', '.m4v', '.wmv'])
 
+const SUBTITLE_EXTENSIONS = new Set(['.srt', '.vtt', '.ass', '.ssa', '.sub'])
+
 function findVideoFiles(dir: string): string[] {
   const results: string[] = []
   try {
@@ -148,6 +150,41 @@ export async function pickVideoDialog(): Promise<string | null> {
   })
   if (result.canceled || result.filePaths.length === 0) return null
   return result.filePaths[0]
+}
+
+/**
+ * Find subtitle files alongside a resolved video file.
+ * Scans the same directory as the video for .srt, .vtt, .ass, .ssa, .sub files.
+ */
+export function findSubtitleFiles(
+  videoFilePath: string
+): { filePath: string; label: string; language: string; format: string }[] {
+  const dir = join(videoFilePath, '..')
+  const results: { filePath: string; label: string; language: string; format: string }[] = []
+
+  try {
+    const entries = readdirSync(dir)
+    for (const entry of entries) {
+      const ext = extname(entry).toLowerCase()
+      if (!SUBTITLE_EXTENSIONS.has(ext)) continue
+
+      const fullPath = join(dir, entry)
+      try {
+        if (statSync(fullPath).isDirectory()) continue
+      } catch {
+        continue
+      }
+
+      const format = ext.slice(1) // Remove the dot
+      const label = basename(entry, ext)
+
+      results.push({ filePath: fullPath, label, language: '', format })
+    }
+  } catch {
+    // directory not readable
+  }
+
+  return results
 }
 
 /** Auto-add a completed download to the movie library. */

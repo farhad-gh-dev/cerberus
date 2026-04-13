@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useState, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Film } from 'lucide-react'
 import TorrentResults from '../components/torrent-results'
 import ConfirmRemoveModal from '../components/confirm-remove-modal'
@@ -16,8 +16,10 @@ import { isValidField } from '../utils/formatters'
 
 export default function LibraryDetail() {
   const { imdbId } = useParams<{ imdbId: string }>()
+  const navigate = useNavigate()
   const [showTorrents, setShowTorrents] = useState(false)
   const [showRemoveModal, setShowRemoveModal] = useState(false)
+  const [streamMode, setStreamMode] = useState(false)
 
   const {
     movie,
@@ -39,6 +41,28 @@ export default function LibraryDetail() {
     handleDownload,
     navigateToLibrary
   } = useLibraryActions({ movie, resolvedVideo, imdbId, setMovie, setResolvedVideo })
+
+  const handleStreamTorrent = useCallback(
+    async (torrent: { magnetLink: string }) => {
+      if (!movie) return
+      const result = await window.api.stream.start(torrent.magnetLink)
+      setShowTorrents(false)
+      setStreamMode(false)
+      const params = new URLSearchParams({
+        streamId: result.id,
+        title: movie.title,
+        back: `/library/${movie.imdbId}`
+      })
+      params.set('imdbId', movie.imdbId)
+      navigate(`/player?${params.toString()}`)
+    },
+    [movie, navigate]
+  )
+
+  const openStream = useCallback(() => {
+    setStreamMode(true)
+    setShowTorrents(true)
+  }, [])
 
   if (loading) return <LoadingSpinner className="h-full" />
 
@@ -84,8 +108,12 @@ export default function LibraryDetail() {
             playDisabled={resolvedVideo === null}
             onPlay={playMovie}
             onOpenFolder={handleOpenFolder}
-            onFindTorrents={() => setShowTorrents(true)}
+            onFindTorrents={() => {
+              setStreamMode(false)
+              setShowTorrents(true)
+            }}
             onRemove={() => setShowRemoveModal(true)}
+            onStream={openStream}
           />
         }
         footer={
@@ -116,11 +144,19 @@ export default function LibraryDetail() {
           movieTitle={movie.title}
           movieYear={movie.year}
           imdbId={movie.imdbId}
-          onClose={() => setShowTorrents(false)}
-          onDownload={async (t) => {
-            await handleDownload(t)
+          onClose={() => {
             setShowTorrents(false)
+            setStreamMode(false)
           }}
+          onDownload={
+            streamMode
+              ? handleStreamTorrent
+              : async (t) => {
+                  await handleDownload(t)
+                  setShowTorrents(false)
+                }
+          }
+          streamMode={streamMode}
         />
       )}
     </div>

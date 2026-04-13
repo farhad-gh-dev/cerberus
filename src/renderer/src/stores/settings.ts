@@ -7,7 +7,7 @@ interface SettingsState {
   settings: AppSettings | null
   saved: string | null
   load: () => void
-  update: (key: keyof AppSettings, value: string | boolean) => Promise<void>
+  update: (key: keyof AppSettings, value: string | boolean | number) => Promise<void>
   pickFolder: () => Promise<void>
   pickPlayer: () => Promise<void>
 }

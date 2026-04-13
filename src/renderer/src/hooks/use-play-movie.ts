@@ -6,6 +6,7 @@ interface PlayMovieOptions {
   filePath: string | null
   resolvedVideo: string | null
   title: string
+  imdbId?: string
   backTo: string
   /** Called right before navigating to the internal player (e.g. to close a modal). */
   beforeNavigate?: () => void
@@ -19,6 +20,7 @@ export function usePlayMovie({
   filePath,
   resolvedVideo,
   title,
+  imdbId,
   backTo,
   beforeNavigate
 }: PlayMovieOptions) {
@@ -38,9 +40,10 @@ export function usePlayMovie({
       // ignore and fallback to internal player
     }
     const params = new URLSearchParams({ file, title, back: backTo })
+    if (imdbId) params.set('imdbId', imdbId)
     beforeNavigate?.()
     navigate(`/player?${params.toString()}`)
-  }, [filePath, resolvedVideo, title, backTo, beforeNavigate, navigate, run])
+  }, [filePath, resolvedVideo, title, imdbId, backTo, beforeNavigate, navigate, run])
 
   return play
 }

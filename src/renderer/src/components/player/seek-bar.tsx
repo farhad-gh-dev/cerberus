@@ -2,10 +2,11 @@ import { formatTime } from '../../utils/formatters'
 import { usePlayerContext } from './player-context'
 
 export default function SeekBar() {
-  const { playback, seekBar } = usePlayerContext()
+  const { playback, seekBar, streamingStats } = usePlayerContext()
 
   const progressPct = playback.duration > 0 ? (playback.currentTime / playback.duration) * 100 : 0
   const bufferedPct = playback.duration > 0 ? (playback.buffered / playback.duration) * 100 : 0
+  const downloadedRanges = streamingStats?.downloadedRanges ?? []
 
   return (
     <div
@@ -17,7 +18,15 @@ export default function SeekBar() {
     >
       {/* Track */}
       <div className="absolute left-0 right-0 h-1 group-hover:h-1.5 bg-white/20 rounded-full transition-all">
-        {/* Buffered */}
+        {/* Torrent downloaded ranges (emerald segments, only visible during streaming) */}
+        {downloadedRanges.map(([start, end], i) => (
+          <div
+            key={i}
+            className="absolute inset-y-0 bg-emerald-500/30 rounded-full"
+            style={{ left: `${start}%`, width: `${end - start}%` }}
+          />
+        ))}
+        {/* Buffered (video element) */}
         <div
           className="absolute inset-y-0 left-0 bg-white/20 rounded-full"
           style={{ width: `${bufferedPct}%` }}

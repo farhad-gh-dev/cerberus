@@ -9,12 +9,20 @@ const PlayerContext = createContext<PlayerState | null>(null)
 interface PlayerProviderProps {
   filePath: string | null
   backTo: string
+  imdbId?: string
+  streamId?: string
   children: ReactNode
 }
 
-export function PlayerProvider({ filePath, backTo, children }: PlayerProviderProps) {
+export function PlayerProvider({
+  filePath,
+  backTo,
+  imdbId,
+  streamId,
+  children
+}: PlayerProviderProps) {
   const navigate = useNavigate()
-  const player = usePlayer(filePath, navigate, backTo)
+  const player = usePlayer(filePath, navigate, backTo, imdbId, streamId)
   return <PlayerContext.Provider value={player}>{children}</PlayerContext.Provider>
 }
 

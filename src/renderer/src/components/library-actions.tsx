@@ -1,4 +1,4 @@
-import { Play, FolderOpen, Download, Trash2 } from 'lucide-react'
+import { Play, FolderOpen, Download, Trash2, Radio } from 'lucide-react'
 
 interface LibraryActionsProps {
   hasFile: boolean
@@ -7,6 +7,7 @@ interface LibraryActionsProps {
   onOpenFolder: () => void
   onFindTorrents: () => void
   onRemove: () => void
+  onStream?: () => void
 }
 
 export default function LibraryActions({
@@ -15,7 +16,8 @@ export default function LibraryActions({
   onPlay,
   onOpenFolder,
   onFindTorrents,
-  onRemove
+  onRemove,
+  onStream
 }: LibraryActionsProps) {
   return (
     <>
@@ -36,6 +38,15 @@ export default function LibraryActions({
         >
           <FolderOpen size={18} />
           Open Folder
+        </button>
+      )}
+      {!hasFile && onStream && (
+        <button
+          onClick={onStream}
+          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-7 py-3 rounded-xl transition-colors"
+        >
+          <Radio size={18} />
+          Stream
         </button>
       )}
       {!hasFile && (

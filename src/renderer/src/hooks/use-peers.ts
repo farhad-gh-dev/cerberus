@@ -17,11 +17,14 @@ interface UsePeersResult {
   togglePeer: (address: string) => void
   /** Top countries by peer count, sorted descending */
   topCountries: [country: string, count: number][]
+  /** True until the first fetch completes */
+  loading: boolean
 }
 
 export function usePeers(downloadId: string | undefined): UsePeersResult {
   const [peers, setPeers] = useState<PeerInfo[]>([])
   const [selectedPeer, setSelectedPeer] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const fetchPeers = useCallback(async () => {
     if (!downloadId) return
@@ -35,10 +38,13 @@ export function usePeers(downloadId: string | undefined): UsePeersResult {
       })
     } catch (err) {
       console.warn('[usePeers] Failed to fetch peers:', err)
+    } finally {
+      setLoading(false)
     }
   }, [downloadId])
 
   useEffect(() => {
+    setLoading(true)
     fetchPeers()
     const interval = setInterval(fetchPeers, POLL_INTERVAL_MS)
     return () => clearInterval(interval)
@@ -75,5 +81,5 @@ export function usePeers(downloadId: string | undefined): UsePeersResult {
     setSelectedPeer((prev) => (prev === address ? null : address))
   }, [])
 
-  return { peers, stats, selectedPeer, togglePeer, topCountries }
+  return { peers, stats, selectedPeer, togglePeer, topCountries, loading }
 }

@@ -102,6 +102,10 @@ export interface AppSettings {
   downloadPath: string
   tmdbApiKey: string
   externalPlayerPath: string
+  maxConcurrentDownloads: number
+  subtitleProvider: 'opensubtitles' | 'subdl'
+  openSubtitlesApiKey: string
+  subdlApiKey: string
 }
 
 export interface LibraryMovie {
@@ -125,7 +129,7 @@ export interface DownloadItem {
   name: string
   magnetLink: string
   savePath: string
-  status: 'downloading' | 'paused' | 'completed' | 'error'
+  status: 'downloading' | 'paused' | 'completed' | 'error' | 'queued' | 'on-hold'
   progress: number
   downloadSpeed: number
   uploadSpeed: number
@@ -134,6 +138,7 @@ export interface DownloadItem {
   timeRemaining: number
   peers: number
   isCustom?: boolean
+  priority: number
 }
 
 // ---------- Peer types ----------
@@ -158,4 +163,27 @@ export interface PeerLocation {
   country: string
   countryCode: string
   isp: string
+}
+
+// ---------- Subtitle types ----------
+
+export interface SubtitleTrack {
+  filePath: string
+  label: string
+  language: string
+  format: string
+}
+
+export interface OnlineSubtitleResult {
+  /** Unique identifier — OpenSubtitles numeric ID or Subdl URL */
+  id: string
+  provider: 'opensubtitles' | 'subdl'
+  fileName: string
+  language: string
+  languageCode: string
+  downloadCount: number
+  rating: number
+  format: string
+  /** Direct download URL (Subdl) — OpenSubtitles uses its own download endpoint */
+  downloadUrl?: string
 }

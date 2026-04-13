@@ -10,7 +10,8 @@ import {
   clearLibrary,
   resolveVideoFile,
   openInPlayer,
-  pickVideoDialog
+  pickVideoDialog,
+  findSubtitleFiles
 } from '../services/library'
 
 export function registerLibraryHandlers(): void {
@@ -52,4 +53,8 @@ export function registerLibraryHandlers(): void {
     clearLibrary()
     return true
   })
+
+  ipcMain.handle('library:resolve-subtitles', (_event, videoPath: string) =>
+    findSubtitleFiles(videoPath)
+  )
 }

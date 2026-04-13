@@ -13,6 +13,7 @@ export interface ManagedDownload {
   savePath: string
   imdbId?: string
   isCustom?: boolean
+  priority?: number
   /** Last-known progress (0–1) from the persisted store, used as fallback while metadata loads. */
   lastProgress?: number
   /** Last-known downloaded bytes from the persisted store. */
@@ -27,12 +28,24 @@ export function buildItem(id: string, dl: ManagedDownload): DownloadItem {
   const t = dl.torrent
   const hasMetadata = t && t.length > 0
 
+  // Derive status from the live torrent state
+  let status: DownloadItem['status']
+  if (!t || t.destroyed) {
+    status = 'downloading' // torrent being set up — will start momentarily
+  } else if (t.done) {
+    status = 'completed'
+  } else if (t.paused) {
+    status = 'queued'
+  } else {
+    status = 'downloading'
+  }
+
   return {
     id,
     name: dl.name,
     magnetLink: dl.magnetLink,
     savePath: dl.savePath,
-    status: t ? (t.done ? 'completed' : t.paused ? 'paused' : 'downloading') : 'error',
+    status,
     progress: hasMetadata ? safeNum(t.progress) : safeNum(dl.lastProgress),
     downloadSpeed: safeNum(t?.downloadSpeed),
     uploadSpeed: safeNum(t?.uploadSpeed),
@@ -40,7 +53,8 @@ export function buildItem(id: string, dl: ManagedDownload): DownloadItem {
     totalSize: hasMetadata ? safeNum(t?.length) : safeNum(dl.lastTotalSize),
     timeRemaining: hasMetadata ? safeNum(t.timeRemaining, Infinity) : Infinity,
     peers: safeNum(t?.numPeers),
-    isCustom: dl.isCustom
+    isCustom: dl.isCustom,
+    priority: dl.priority ?? 0
   }
 }
 
@@ -54,6 +68,7 @@ export function buildItemFromRecord(r: {
   downloaded: number
   totalSize: number
   isCustom?: boolean
+  priority?: number
 }): DownloadItem {
   return {
     id: r.id,
@@ -68,7 +83,8 @@ export function buildItemFromRecord(r: {
     totalSize: r.totalSize,
     timeRemaining: 0,
     peers: 0,
-    isCustom: r.isCustom
+    isCustom: r.isCustom,
+    priority: r.priority ?? 0
   }
 }
 

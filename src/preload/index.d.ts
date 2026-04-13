@@ -7,7 +7,9 @@ import type {
   DownloadItem,
   PeerInfo,
   LibraryMovie,
-  AppSettings
+  AppSettings,
+  SubtitleTrack,
+  OnlineSubtitleResult
 } from '../shared/types'
 
 declare global {
@@ -25,7 +27,7 @@ declare global {
       }
       tmdb: {
         backdrop: (imdbId: string) => Promise<{ backdrop: string | null; poster: string | null }>
-        trending: () => Promise<TrendingMovie[]>
+        trending: (page?: number) => Promise<TrendingMovie[]>
       }
       torrent: {
         search: (query: string, imdbId?: string) => Promise<TorrentResult[]>
@@ -39,6 +41,10 @@ declare global {
         delete: (id: string) => Promise<boolean>
         list: () => Promise<DownloadItem[]>
         peers: (id: string) => Promise<PeerInfo[]>
+        moveInQueue: (id: string, direction: 'up' | 'down') => Promise<boolean>
+        reorderQueue: (orderedIds: string[]) => Promise<boolean>
+        hold: (id: string) => Promise<boolean>
+        unhold: (id: string) => Promise<boolean>
         onProgress: (callback: (items: DownloadItem[]) => void) => () => void
       }
       library: {
@@ -57,15 +63,36 @@ declare global {
         setVideoPath: (id: number, filePath: string) => Promise<boolean>
         clearFile: (id: number, deleteSource?: boolean) => Promise<boolean>
         clear: () => Promise<boolean>
+        resolveSubtitles: (videoPath: string) => Promise<SubtitleTrack[]>
       }
       video: {
         serverPort: () => Promise<number>
       }
+      subtitles: {
+        searchOnline: (imdbId: string, language?: string) => Promise<OnlineSubtitleResult[]>
+        download: (resultId: string, videoFilePath: string) => Promise<SubtitleTrack | null>
+      }
       settings: {
         getAll: () => Promise<AppSettings>
-        set: (key: string, value: string | boolean) => Promise<boolean>
+        set: (key: string, value: string | boolean | number) => Promise<boolean>
         pickFolder: () => Promise<string | null>
         pickPlayer: () => Promise<string | null>
+      }
+      stream: {
+        start: (magnetLink: string) => Promise<{ id: string; fileName: string }>
+        stop: (id: string) => Promise<boolean>
+        stats: (id: string) => Promise<{
+          downloadSpeed: number
+          uploadSpeed: number
+          numPeers: number
+          progress: number
+          downloaded: number
+          fileLength: number
+          numPieces: number
+          downloadedRanges: [number, number][]
+        } | null>
+        seek: (id: string, byteOffset: number) => Promise<boolean>
+        filePath: (id: string) => Promise<string | null>
       }
     }
   }

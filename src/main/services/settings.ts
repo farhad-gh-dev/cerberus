@@ -8,7 +8,11 @@ const SETTINGS_FILE = join(app.getPath('userData'), 'settings.json')
 const defaults: AppSettings = {
   downloadPath: join(app.getPath('downloads'), 'Cerberus'),
   tmdbApiKey: '',
-  externalPlayerPath: ''
+  externalPlayerPath: '',
+  maxConcurrentDownloads: 2,
+  subtitleProvider: 'subdl',
+  openSubtitlesApiKey: '',
+  subdlApiKey: ''
 }
 
 let cache: AppSettings | null = null

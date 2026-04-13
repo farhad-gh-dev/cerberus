@@ -6,7 +6,7 @@ export function registerSettingsHandlers(): void {
     return getAllSettings()
   })
 
-  ipcMain.handle('settings:set', (_e, key: string, value: string | boolean) => {
+  ipcMain.handle('settings:set', (_e, key: string, value: string | boolean | number) => {
     setSetting(key as any, value as any)
     return true
   })

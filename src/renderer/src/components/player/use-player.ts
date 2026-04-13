@@ -6,21 +6,43 @@ import { useKeyboardShortcuts } from './use-keyboard-shortcuts'
 import { useSeekBar } from './use-seek-bar'
 import { useVolume } from './use-volume'
 import { usePlaybackRate } from './use-playback-rate'
+import { useSubtitles } from './use-subtitles'
+import { useStreamingStats } from './use-streaming-stats'
 
-export function usePlayer(filePath: string | null, navigate: NavigateFunction, backTo: string) {
+export function usePlayer(
+  filePath: string | null,
+  navigate: NavigateFunction,
+  backTo: string,
+  imdbId?: string,
+  streamId?: string
+) {
   const seekBarRef = useRef<HTMLDivElement>(null)
 
-  const playback = useVideoPlayback(filePath)
-  const seekBar = useSeekBar(playback.videoRef, seekBarRef, playback.duration, playback.setCurrentTime)
+  const playback = useVideoPlayback(filePath, streamId)
+  const streamingStats = useStreamingStats(streamId)
+  const seekBar = useSeekBar(
+    playback.videoRef,
+    seekBarRef,
+    playback.duration,
+    playback.setCurrentTime,
+    streamId
+  )
   const vol = useVolume(playback.videoRef)
   const speed = usePlaybackRate(playback.videoRef)
+
+  const subtitles = useSubtitles({
+    videoRef: playback.videoRef,
+    videoSrc: playback.videoSrc,
+    imdbId
+  })
 
   const controls = useVideoControls({
     videoRef: playback.videoRef,
     playing: playback.playing,
     isSeeking: seekBar.isSeeking,
     isDraggingVolume: vol.isDraggingVolume,
-    showSpeedMenu: speed.showSpeedMenu
+    showSpeedMenu: speed.showSpeedMenu,
+    showSubtitleMenu: subtitles.showMenu
   })
 
   useKeyboardShortcuts({
@@ -35,7 +57,8 @@ export function usePlayer(filePath: string | null, navigate: NavigateFunction, b
     backTo,
     isFullscreen: controls.isFullscreen,
     showSpeedMenu: speed.showSpeedMenu,
-    setShowSpeedMenu: speed.setShowSpeedMenu
+    setShowSpeedMenu: speed.setShowSpeedMenu,
+    cycleSubtitleTrack: subtitles.cycleTrack
   })
 
   return {
@@ -45,6 +68,7 @@ export function usePlayer(filePath: string | null, navigate: NavigateFunction, b
       loading: playback.loading,
       error: playback.error,
       playing: playback.playing,
+      buffering: playback.buffering,
       currentTime: playback.currentTime,
       duration: playback.duration,
       buffered: playback.buffered,
@@ -55,7 +79,9 @@ export function usePlayer(filePath: string | null, navigate: NavigateFunction, b
       handleTimeUpdate: playback.handleTimeUpdate,
       handleLoadedMetadata: playback.handleLoadedMetadata,
       handleProgress: playback.handleProgress,
-      handleEnded: playback.handleEnded
+      handleEnded: playback.handleEnded,
+      handleWaiting: playback.handleWaiting,
+      handleCanPlay: playback.handleCanPlay
     },
     controls: {
       containerRef: controls.containerRef,
@@ -85,6 +111,27 @@ export function usePlayer(filePath: string | null, navigate: NavigateFunction, b
       showSpeedMenu: speed.showSpeedMenu,
       toggleSpeedMenu: speed.toggleSpeedMenu,
       changePlaybackRate: speed.changePlaybackRate
-    }
+    },
+    subtitles: {
+      tracks: subtitles.tracks,
+      activeIndex: subtitles.activeIndex,
+      subtitleUrls: subtitles.subtitleUrls,
+      showMenu: subtitles.showMenu,
+      activeCueText: subtitles.activeCueText,
+      bottomOffset: subtitles.bottomOffset,
+      fontSize: subtitles.fontSize,
+      hasImdbId: subtitles.hasImdbId,
+      selectTrack: subtitles.selectTrack,
+      disableSubtitles: subtitles.disableSubtitles,
+      toggleMenu: subtitles.toggleMenu,
+      cycleTrack: subtitles.cycleTrack,
+      moveUp: subtitles.moveUp,
+      moveDown: subtitles.moveDown,
+      increaseFontSize: subtitles.increaseFontSize,
+      decreaseFontSize: subtitles.decreaseFontSize,
+      online: subtitles.online
+    },
+    streamingStats,
+    streamId
   }
 }

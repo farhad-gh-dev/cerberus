@@ -1,133 +1,89 @@
-import { Pause, Play, Trash2, MapPin } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { memo } from 'react'
+import { GripVertical } from 'lucide-react'
 import type { DownloadItem } from '@shared/types'
-import { formatBytes, formatSpeed, formatEta } from '../utils/formatters'
-import { useDownloadsStore } from '../stores/downloads'
+import { cn } from '../utils/cn'
+import { useDownloadActions } from '../hooks/use-download-actions'
+import { statusLabel, statusColor, statusIcon } from './download-status'
+import ActionButtons from './download-action-buttons'
+import ProgressBar from './download-progress-bar'
+import StatsRow from './download-stats-row'
 
-const statusLabel: Record<string, string> = {
-  downloading: 'Downloading',
-  paused: 'Paused',
-  completed: 'Completed',
-  error: 'Error'
+// ---------- Props ----------
+
+interface DragProps {
+  draggable?: boolean
+  isDragging?: boolean
+  isDragOver?: boolean
+  onDragStart?: (e: React.DragEvent) => void
+  onDragEnd?: (e: React.DragEvent) => void
+  onDragOver?: (e: React.DragEvent) => void
+  onDragEnter?: (e: React.DragEvent) => void
+  onDragLeave?: (e: React.DragEvent) => void
+  onDrop?: (e: React.DragEvent) => void
 }
 
-const statusColor: Record<string, string> = {
-  downloading: 'text-blue-400',
-  paused: 'text-yellow-400',
-  completed: 'text-green-400',
-  error: 'text-red-400'
+interface DownloadRowProps extends DragProps {
+  item: DownloadItem
+  showQueueButton?: boolean
 }
 
-export default function DownloadRow({ item }: { item: DownloadItem }) {
-  const progressPct = Math.round(item.progress * 100)
-  const { pause, resume, cancel, delete: del } = useDownloadsStore()
-  const navigate = useNavigate()
+// ---------- Main component ----------
 
-  const handlePause = () => pause(item.id)
-  const handleResume = () => resume(item.id)
-  const handleCancel = () => cancel(item.id)
+export default memo(function DownloadRow({
+  item,
+  showQueueButton = true,
+  draggable = false,
+  isDragging = false,
+  isDragOver = false,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDrop
+}: DownloadRowProps) {
+  const actions = useDownloadActions(item.id)
+  const StatusIcon = statusIcon[item.status]
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-      {/* Top row: name + actions */}
+    <div
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={cn(
+        'bg-zinc-900 border rounded-xl p-4 transition-all',
+        isDragging && 'opacity-40 border-zinc-700 scale-[0.98]',
+        isDragOver && 'border-blue-500 bg-blue-500/5 shadow-[0_0_12px_rgba(59,130,246,0.15)]',
+        !isDragging && !isDragOver && 'border-zinc-800',
+        draggable && 'cursor-grab active:cursor-grabbing'
+      )}
+    >
+      {/* Header: name + status + actions */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white truncate">{item.name}</p>
-          <p className={`text-xs mt-0.5 ${statusColor[item.status]}`}>{statusLabel[item.status]}</p>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          {item.status === 'downloading' && (
-            <button
-              onClick={handlePause}
-              className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 transition-colors"
-              title="Pause"
-            >
-              <Pause size={14} />
-            </button>
-          )}
-          {item.status === 'paused' && (
-            <button
-              onClick={handleResume}
-              className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-blue-400 transition-colors"
-              title="Resume"
-            >
-              <Play size={14} />
-            </button>
-          )}
-          {item.status !== 'completed' && (
-            <button
-              onClick={handleCancel}
-              className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 flex items-center justify-center text-zinc-400 hover:text-red-400 transition-colors"
-              title="Cancel"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-          {(item.status === 'completed' || item.status === 'error') && (
-            <button
-              onClick={() => del(item.id)}
-              className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 flex items-center justify-center text-zinc-400 hover:text-red-400 transition-colors"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      {item.status !== 'error' && (
-        <div className="mt-3">
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                item.status === 'completed'
-                  ? 'bg-green-500'
-                  : item.status === 'paused'
-                    ? 'bg-yellow-500'
-                    : 'bg-blue-500'
-              }`}
-              style={{ width: `${progressPct}%` }}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {draggable && (
+            <GripVertical
+              size={16}
+              className="text-zinc-600 cursor-grab active:cursor-grabbing shrink-0"
             />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">{item.name}</p>
+            <p className={cn('text-xs mt-0.5 flex items-center gap-1', statusColor[item.status])}>
+              {StatusIcon && <StatusIcon size={11} />}
+              {statusLabel[item.status]}
+            </p>
           </div>
         </div>
-      )}
-
-      {/* Stats row */}
-      <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
-        <span>{progressPct}%</span>
-        {item.totalSize > 0 && (
-          <span>
-            {formatBytes(item.downloaded)} / {formatBytes(item.totalSize)}
-          </span>
-        )}
-        {item.status === 'downloading' && (
-          <>
-            <span>{formatSpeed(item.downloadSpeed)}</span>
-            <span>ETA: {formatEta(item.timeRemaining)}</span>
-            <span>{item.peers} peers</span>
-          </>
-        )}
-        {(item.status === 'downloading' || item.status === 'paused') && (
-          <button
-            onClick={() => navigate(`/downloads/${item.id}`)}
-            className="ml-auto flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            <MapPin size={12} />
-            View Peers
-          </button>
-        )}
-        {item.status === 'completed' && (
-          <button
-            onClick={() => navigate(`/downloads/${item.id}`)}
-            className="ml-auto flex items-center gap-1 text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            <MapPin size={12} />
-            View Peers
-          </button>
-        )}
+        <ActionButtons item={item} showQueueButton={showQueueButton} actions={actions} />
       </div>
+
+      <ProgressBar item={item} />
+      <StatsRow item={item} />
     </div>
   )
-}
+})

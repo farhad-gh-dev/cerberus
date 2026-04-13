@@ -30,6 +30,7 @@ export function useLibraryActions({
     filePath: movie?.filePath ?? null,
     resolvedVideo,
     title: movie?.title ?? '',
+    imdbId: movie?.imdbId,
     backTo
   })
 

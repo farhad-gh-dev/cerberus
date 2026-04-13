@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { X, AlertCircle } from 'lucide-react'
 import type { TorrentResult } from '@shared/types'
 import TorrentResults from './torrent-results'
@@ -19,8 +20,10 @@ interface MovieDetailProps {
 }
 
 export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: MovieDetailProps) {
+  const navigate = useNavigate()
   const startDownload = useDownloadsStore((s) => s.start)
   const [showTorrents, setShowTorrents] = useState(false)
+  const [streamMode, setStreamMode] = useState(false)
 
   const {
     movie,
@@ -41,6 +44,7 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
     filePath: libraryEntry?.filePath ?? null,
     resolvedVideo,
     title: movie?.title ?? '',
+    imdbId: movie?.imdbId,
     backTo: '/',
     beforeNavigate: onClose
   })
@@ -54,8 +58,36 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
     [movie, startDownload]
   )
 
-  const openTorrents = useCallback(() => setShowTorrents(true), [])
-  const closeTorrents = useCallback(() => setShowTorrents(false), [])
+  const openTorrents = useCallback(() => {
+    setStreamMode(false)
+    setShowTorrents(true)
+  }, [])
+  const openStream = useCallback(() => {
+    setStreamMode(true)
+    setShowTorrents(true)
+  }, [])
+  const closeTorrents = useCallback(() => {
+    setShowTorrents(false)
+    setStreamMode(false)
+  }, [])
+
+  const handleStreamTorrent = useCallback(
+    async (torrent: TorrentResult) => {
+      if (!movie) return
+      const result = await window.api.stream.start(torrent.magnetLink)
+      setShowTorrents(false)
+      setStreamMode(false)
+      const params = new URLSearchParams({
+        streamId: result.id,
+        title: movie.title,
+        back: '/'
+      })
+      if (movie.imdbId) params.set('imdbId', movie.imdbId)
+      onClose()
+      navigate(`/player?${params.toString()}`)
+    },
+    [movie, onClose, navigate]
+  )
 
   if (loading) {
     return (
@@ -112,6 +144,7 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
               onPlay={playMovie}
               onFindTorrents={openTorrents}
               onAddToLibrary={addToLibrary}
+              onStream={openStream}
             />
           }
           sidePanel={
@@ -126,7 +159,8 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
           movieYear={movie.year}
           imdbId={movie.imdbId}
           onClose={closeTorrents}
-          onDownload={handleDownload}
+          onDownload={streamMode ? handleStreamTorrent : handleDownload}
+          streamMode={streamMode}
         />
       )}
     </div>

@@ -1,13 +1,14 @@
 import { ipcMain } from 'electron'
+import { startDownload, getDownloads, getPeers } from '../services/download-manager'
 import {
-  startDownload,
   pauseDownload,
   resumeDownload,
   cancelDownload,
-  getDownloads,
   deleteDownload,
-  getPeers
-} from '../services/download-manager'
+  holdDownload,
+  unholdDownload
+} from '../services/download-actions'
+import { moveInQueue, reorderQueue } from '../services/download-queue'
 
 export function registerDownloadHandlers(): void {
   ipcMain.handle(
@@ -43,5 +44,21 @@ export function registerDownloadHandlers(): void {
 
   ipcMain.handle('download:peers', async (_event, id: string) => {
     return getPeers(id)
+  })
+
+  ipcMain.handle('download:move-in-queue', async (_event, id: string, direction: 'up' | 'down') => {
+    return moveInQueue(id, direction)
+  })
+
+  ipcMain.handle('download:reorder-queue', async (_event, orderedIds: string[]) => {
+    return reorderQueue(orderedIds)
+  })
+
+  ipcMain.handle('download:hold', async (_event, id: string) => {
+    return holdDownload(id)
+  })
+
+  ipcMain.handle('download:unhold', async (_event, id: string) => {
+    return unholdDownload(id)
   })
 }

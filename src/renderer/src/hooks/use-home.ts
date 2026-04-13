@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { MovieSearchItem, TrendingMovie, LibraryMovie } from '@shared/types'
 import type { MovieCardStatus } from '../components/movie-card'
 import { useSettingsStore } from '../stores/settings'
+
+const MAX_TRENDING_PAGES = 5
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -23,7 +25,10 @@ interface SearchState {
 interface TrendingState {
   movies: TrendingMovie[]
   loading: boolean
+  loadingMore: boolean
   error: boolean
+  page: number
+  hasMore: boolean
 }
 
 const INITIAL_SEARCH: SearchState = {
@@ -40,8 +45,14 @@ export function useHome() {
   const [trending, setTrending] = useState<TrendingState>({
     movies: [],
     loading: true,
-    error: false
+    loadingMore: false,
+    error: false,
+    page: 1,
+    hasMore: true
   })
+  const loadingMoreRef = useRef(false)
+  const trendingRef = useRef(trending)
+  trendingRef.current = trending
   const [libraryMovies, setLibraryMovies] = useState<LibraryMovie[]>([])
   const [selectedMovie, setSelectedMovie] = useState<SelectedMovie | null>(null)
 
@@ -59,12 +70,52 @@ export function useHome() {
 
   useEffect(() => {
     window.api.tmdb
-      .trending()
-      .then((movies) => setTrending({ movies, loading: false, error: false }))
-      .catch(() => setTrending({ movies: [], loading: false, error: true }))
+      .trending(1)
+      .then((movies) =>
+        setTrending({
+          movies,
+          loading: false,
+          loadingMore: false,
+          error: false,
+          page: 1,
+          hasMore: movies.length > 0 && 1 < MAX_TRENDING_PAGES
+        })
+      )
+      .catch(() =>
+        setTrending({
+          movies: [],
+          loading: false,
+          loadingMore: false,
+          error: true,
+          page: 1,
+          hasMore: false
+        })
+      )
     loadLibrary()
     loadSettings()
   }, [loadLibrary, loadSettings])
+
+  const loadMoreTrending = useCallback(async () => {
+    if (loadingMoreRef.current) return
+    loadingMoreRef.current = true
+    setTrending((prev) => ({ ...prev, loadingMore: true }))
+
+    try {
+      const nextPage = trendingRef.current.page + 1
+      const movies = await window.api.tmdb.trending(nextPage)
+      setTrending((prev) => ({
+        ...prev,
+        movies: [...prev.movies, ...movies],
+        loadingMore: false,
+        page: nextPage,
+        hasMore: movies.length > 0 && nextPage < MAX_TRENDING_PAGES
+      }))
+    } catch {
+      setTrending((prev) => ({ ...prev, loadingMore: false, hasMore: false }))
+    } finally {
+      loadingMoreRef.current = false
+    }
+  }, [])
 
   // ── Library status lookup ───────────────────────────────────────────
   // Build a Map for O(1) lookups instead of Array.find() per card.
@@ -130,6 +181,7 @@ export function useHome() {
     handleSearch,
     handleReset,
     selectMovie,
-    clearSelection
+    clearSelection,
+    loadMoreTrending
   } as const
 }

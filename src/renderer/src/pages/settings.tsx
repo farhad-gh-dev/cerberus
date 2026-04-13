@@ -13,13 +13,19 @@ import { useAsyncAction } from '../hooks/use-async-action'
 export default function Settings() {
   const { settings, saved, load, update, pickFolder, pickPlayer } = useSettingsStore()
   const [apiKeyDraft, setApiKeyDraft] = useState('')
+  const [subtitleKeyDraft, setSubtitleKeyDraft] = useState('')
 
   useEffect(() => {
     load()
   }, [load])
 
   useEffect(() => {
-    if (settings) setApiKeyDraft(settings.tmdbApiKey)
+    if (settings) {
+      setApiKeyDraft(settings.tmdbApiKey)
+      const key =
+        settings.subtitleProvider === 'subdl' ? settings.subdlApiKey : settings.openSubtitlesApiKey
+      setSubtitleKeyDraft(key)
+    }
   }, [settings])
 
   const run = useAsyncAction()
@@ -60,6 +66,30 @@ export default function Settings() {
             </button>
           </div>
           {saved === 'downloadPath' && <p className="text-xs text-green-400 mt-1">Saved</p>}
+
+          {/* Max concurrent downloads */}
+          <div className="mt-4 pt-4 border-t border-zinc-800">
+            <label className="text-sm text-zinc-300 font-medium">Max Concurrent Downloads</label>
+            <p className="text-xs text-zinc-600 mt-0.5 mb-2">
+              Additional downloads will be queued and start automatically when a slot opens.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={1}
+                max={5}
+                value={settings.maxConcurrentDownloads}
+                onChange={(e) => update('maxConcurrentDownloads', Number(e.target.value))}
+                className="flex-1 accent-blue-500 h-1.5"
+              />
+              <span className="text-sm font-medium text-white tabular-nums w-5 text-center">
+                {settings.maxConcurrentDownloads}
+              </span>
+            </div>
+            {saved === 'maxConcurrentDownloads' && (
+              <p className="text-xs text-green-400 mt-1">Saved</p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -120,6 +150,66 @@ export default function Settings() {
           <p className="text-xs text-zinc-600 mt-1.5">
             Get a free key at <span className="text-zinc-400">themoviedb.org</span>
           </p>
+
+          {/* Subtitle Provider */}
+          <div className="mt-4 pt-4 border-t border-zinc-800">
+            <label className="text-sm text-zinc-300 font-medium">Subtitle Provider</label>
+            <div className="flex items-center gap-1 mt-2 bg-zinc-800 rounded-lg p-1 border border-zinc-700">
+              <button
+                onClick={() => {
+                  update('subtitleProvider', 'subdl')
+                  setSubtitleKeyDraft(settings.subdlApiKey)
+                }}
+                className={`flex-1 text-sm px-3 py-1.5 rounded-md transition-colors ${
+                  settings.subtitleProvider === 'subdl'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Subdl
+              </button>
+              <button
+                onClick={() => {
+                  update('subtitleProvider', 'opensubtitles')
+                  setSubtitleKeyDraft(settings.openSubtitlesApiKey)
+                }}
+                className={`flex-1 text-sm px-3 py-1.5 rounded-md transition-colors ${
+                  settings.subtitleProvider === 'opensubtitles'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                OpenSubtitles
+              </button>
+            </div>
+            {saved === 'subtitleProvider' && <p className="text-xs text-green-400 mt-1">Saved</p>}
+
+            <label className="text-sm text-zinc-300 font-medium flex items-center gap-1.5 mt-3">
+              <Key size={14} /> {settings.subtitleProvider === 'subdl' ? 'Subdl' : 'OpenSubtitles'}{' '}
+              API Key
+            </label>
+            <input
+              type="text"
+              value={subtitleKeyDraft}
+              onChange={(e) => setSubtitleKeyDraft(e.target.value)}
+              onBlur={(e) => {
+                const field =
+                  settings.subtitleProvider === 'subdl' ? 'subdlApiKey' : 'openSubtitlesApiKey'
+                update(field, e.target.value)
+              }}
+              className="mt-2 w-full bg-zinc-800 text-zinc-300 text-sm px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:border-blue-500"
+              placeholder={`Enter your ${settings.subtitleProvider === 'subdl' ? 'Subdl' : 'OpenSubtitles'} API key...`}
+            />
+            {(saved === 'openSubtitlesApiKey' || saved === 'subdlApiKey') && (
+              <p className="text-xs text-green-400 mt-1">Saved</p>
+            )}
+            <p className="text-xs text-zinc-600 mt-1.5">
+              Optional — enables searching subtitles online. Get a key at{' '}
+              <span className="text-zinc-400">
+                {settings.subtitleProvider === 'subdl' ? 'subdl.com' : 'opensubtitles.com'}
+              </span>
+            </p>
+          </div>
         </div>
       </section>
 

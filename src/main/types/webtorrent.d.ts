@@ -5,7 +5,10 @@ declare module 'webtorrent' {
       maxConns?: number
       [key: string]: unknown
     })
-    add(torrentId: string, opts?: { path?: string; announce?: string[] }): WebTorrent.Torrent
+    add(
+      torrentId: string,
+      opts?: { path?: string; announce?: string[]; strategy?: string; [key: string]: unknown }
+    ): WebTorrent.Torrent
     get(torrentId: string): WebTorrent.Torrent | null
     destroy(callback?: () => void): void
   }
@@ -55,6 +58,8 @@ declare module 'webtorrent' {
       pause(): void
       resume(): void
       announce?(): void
+      select?(start: number, end: number, priority?: number): void
+      critical?(start: number, end: number): void
       destroy(opts?: object, callback?: () => void): void
       on(event: string, callback: (...args: unknown[]) => void): void
       once(event: string, callback: (...args: unknown[]) => void): void
@@ -66,6 +71,7 @@ declare module 'webtorrent' {
       length: number
       select?(): void
       deselect?(): void
+      createReadStream(opts?: { start?: number; end?: number }): import('stream').Readable
     }
   }
 

@@ -14,7 +14,11 @@ export async function getClient(): Promise<WebTorrent> {
           'dht.aelitis.com:6881'
         ]
       },
-      maxConns: 100
+      // Allow more simultaneous connections per torrent for faster peer ramp-up
+      maxConns: 200,
+      // Download-related tuning: request more pieces in parallel for throughput
+      downloadLimit: -1,
+      uploadLimit: -1
     })
   }
   return client

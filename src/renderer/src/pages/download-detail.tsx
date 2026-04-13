@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { X, Globe, Play, Pause, Users, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
+import { X, Globe, Pause, Users, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
 import { useDownloadsStore } from '../stores/downloads'
 import { formatSpeed } from '../utils/formatters'
 import { usePeers } from '../hooks/use-peers'
@@ -17,7 +17,7 @@ export default function DownloadDetail() {
   const pauseDownload = useDownloadsStore((s) => s.pause)
   const resumeDownload = useDownloadsStore((s) => s.resume)
 
-  const { peers, stats, selectedPeer, togglePeer, topCountries } = usePeers(downloadId)
+  const { peers, stats, selectedPeer, togglePeer, topCountries, loading } = usePeers(downloadId)
   const { totalDownSpeed, totalUpSpeed, maxBandwidth, locatedCount } = stats
 
   const handleTogglePause = useCallback(() => {
@@ -63,13 +63,13 @@ export default function DownloadDetail() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 px-5 py-2.5 border-b border-zinc-800/30">
-            {download.status !== 'completed' && (
+            {download.status === 'downloading' && (
               <button
                 onClick={handleTogglePause}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-white transition-colors"
               >
-                {download.status === 'paused' ? <Play size={12} /> : <Pause size={12} />}
-                {download.status === 'paused' ? 'Resume' : 'Pause'}
+                <Pause size={12} />
+                Pause
               </button>
             )}
           </div>
@@ -105,26 +105,76 @@ export default function DownloadDetail() {
           </div>
 
           {/* Peer cards */}
-          <PeerList peers={peers} selectedPeer={selectedPeer} onTogglePeer={togglePeer} />
+          {loading ? (
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-zinc-900/70 rounded-2xl p-4 border border-zinc-800/40 animate-pulse"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-zinc-800" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-32 bg-zinc-800 rounded" />
+                      <div className="h-2.5 w-20 bg-zinc-800/60 rounded" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-5">
+                    <div className="h-4 w-14 bg-zinc-800 rounded-full" />
+                    <div className="h-3 w-16 bg-zinc-800 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <PeerList peers={peers} selectedPeer={selectedPeer} onTogglePeer={togglePeer} />
+          )}
 
           {/* Footer */}
           <div className="px-5 py-2.5 border-t border-zinc-800/50 text-[10px] text-zinc-600 flex items-center gap-1.5">
             <Globe size={10} />
-            {locatedCount} of {peers.length} peers geolocated
+            {loading ? (
+              <span className="h-2.5 w-28 bg-zinc-800 rounded animate-pulse inline-block" />
+            ) : (
+              <>
+                {locatedCount} of {peers.length} peers geolocated
+              </>
+            )}
           </div>
         </div>
 
         {/* Right panel — Map (2/3) */}
         <div className="w-2/3 flex flex-col min-h-0">
           <div className="flex-1 min-h-0">
-            <div className="h-full rounded-2xl overflow-hidden border border-zinc-800/30">
+            <div className="h-full rounded-2xl overflow-hidden border border-zinc-800/30 relative">
               <PeerMap peers={peers} maxBandwidth={maxBandwidth} />
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#111316]/60 backdrop-blur-sm z-10">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-zinc-700 border-t-blue-400 rounded-full animate-spin" />
+                    <p className="text-xs text-zinc-500">Locating peers…</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Bottom stats row */}
           <div className="flex items-center gap-4 p-2">
-            <CountryStats countries={topCountries} />
+            {loading ? (
+              <div className="flex items-center gap-3 flex-1">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-zinc-900/60 border border-zinc-800/40 rounded-lg px-3 py-1.5 animate-pulse"
+                  >
+                    <div className="h-3 w-16 bg-zinc-800 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <CountryStats countries={topCountries} />
+            )}
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ const api = {
         backdrop: string | null
         poster: string | null
       }>,
-    trending: () => ipcRenderer.invoke('tmdb:trending')
+    trending: (page?: number) => ipcRenderer.invoke('tmdb:trending', page)
   },
   torrent: {
     search: (query: string, imdbId?: string) => ipcRenderer.invoke('torrent:search', query, imdbId)
@@ -33,6 +33,12 @@ const api = {
     delete: (id: string) => ipcRenderer.invoke('download:delete', id),
     list: () => ipcRenderer.invoke('download:list'),
     peers: (id: string) => ipcRenderer.invoke('download:peers', id),
+    moveInQueue: (id: string, direction: 'up' | 'down') =>
+      ipcRenderer.invoke('download:move-in-queue', id, direction),
+    reorderQueue: (orderedIds: string[]) =>
+      ipcRenderer.invoke('download:reorder-queue', orderedIds),
+    hold: (id: string) => ipcRenderer.invoke('download:hold', id),
+    unhold: (id: string) => ipcRenderer.invoke('download:unhold', id),
     onProgress: (callback: (items: unknown) => void) => {
       const handler = (_event: unknown, items: unknown): void => callback(items)
       ipcRenderer.on('download:progress', handler)
@@ -55,16 +61,47 @@ const api = {
       ipcRenderer.invoke('library:set-video-path', id, filePath),
     clearFile: (id: number, deleteSource?: boolean) =>
       ipcRenderer.invoke('library:clear-file', id, deleteSource),
-    clear: () => ipcRenderer.invoke('library:clear')
+    clear: () => ipcRenderer.invoke('library:clear'),
+    resolveSubtitles: (videoPath: string) =>
+      ipcRenderer.invoke('library:resolve-subtitles', videoPath)
   },
   video: {
     serverPort: () => ipcRenderer.invoke('video:server-port') as Promise<number>
   },
+  subtitles: {
+    searchOnline: (imdbId: string, language?: string) =>
+      ipcRenderer.invoke('subtitles:search-online', imdbId, language),
+    download: (resultId: string, videoFilePath: string) =>
+      ipcRenderer.invoke('subtitles:download', resultId, videoFilePath)
+  },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:get-all'),
-    set: (key: string, value: string | boolean) => ipcRenderer.invoke('settings:set', key, value),
+    set: (key: string, value: string | boolean | number) =>
+      ipcRenderer.invoke('settings:set', key, value),
     pickFolder: () => ipcRenderer.invoke('settings:pick-folder'),
     pickPlayer: () => ipcRenderer.invoke('settings:pick-player')
+  },
+  stream: {
+    start: (magnetLink: string) =>
+      ipcRenderer.invoke('stream:start', magnetLink) as Promise<{
+        id: string
+        fileName: string
+      }>,
+    stop: (id: string) => ipcRenderer.invoke('stream:stop', id) as Promise<boolean>,
+    stats: (id: string) =>
+      ipcRenderer.invoke('stream:stats', id) as Promise<{
+        downloadSpeed: number
+        uploadSpeed: number
+        numPeers: number
+        progress: number
+        downloaded: number
+        fileLength: number
+        numPieces: number
+        downloadedRanges: [number, number][]
+      } | null>,
+    seek: (id: string, byteOffset: number) =>
+      ipcRenderer.invoke('stream:seek', id, byteOffset) as Promise<boolean>,
+    filePath: (id: string) => ipcRenderer.invoke('stream:file-path', id) as Promise<string | null>
   }
 }
 

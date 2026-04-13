@@ -7,6 +7,7 @@ interface VideoControlsDeps {
   isSeeking: boolean
   isDraggingVolume: boolean
   showSpeedMenu: boolean
+  showSubtitleMenu: boolean
 }
 
 export function useVideoControls({
@@ -14,7 +15,8 @@ export function useVideoControls({
   playing,
   isSeeking,
   isDraggingVolume,
-  showSpeedMenu
+  showSpeedMenu,
+  showSubtitleMenu
 }: VideoControlsDeps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -26,10 +28,10 @@ export function useVideoControls({
   const resetControlsTimer = useCallback(() => {
     setShowControls(true)
     if (controlsTimeout.current) clearTimeout(controlsTimeout.current)
-    if (playing && !isSeeking && !isDraggingVolume && !showSpeedMenu) {
+    if (playing && !isSeeking && !isDraggingVolume && !showSpeedMenu && !showSubtitleMenu) {
       controlsTimeout.current = setTimeout(() => setShowControls(false), CONTROLS_HIDE_DELAY)
     }
-  }, [playing, isSeeking, isDraggingVolume, showSpeedMenu])
+  }, [playing, isSeeking, isDraggingVolume, showSpeedMenu, showSubtitleMenu])
 
   useEffect(() => {
     resetControlsTimer()

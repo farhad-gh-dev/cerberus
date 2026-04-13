@@ -19,7 +19,7 @@ export function registerMovieHandlers(): void {
     return getBackdropByImdbId(imdbId)
   })
 
-  ipcMain.handle('tmdb:trending', async () => {
-    return getTrendingMovies()
+  ipcMain.handle('tmdb:trending', async (_event, page?: number) => {
+    return getTrendingMovies(page)
   })
 }

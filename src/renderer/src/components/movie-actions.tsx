@@ -1,4 +1,4 @@
-import { Download, Play, BookmarkPlus, BookmarkCheck } from 'lucide-react'
+import { Download, Play, BookmarkPlus, BookmarkCheck, Radio } from 'lucide-react'
 
 interface MovieActionsProps {
   hasFile: boolean
@@ -8,6 +8,7 @@ interface MovieActionsProps {
   onPlay: () => void
   onFindTorrents: () => void
   onAddToLibrary: () => void
+  onStream?: () => void
 }
 
 export default function MovieActions({
@@ -17,7 +18,8 @@ export default function MovieActions({
   playDisabled,
   onPlay,
   onFindTorrents,
-  onAddToLibrary
+  onAddToLibrary,
+  onStream
 }: MovieActionsProps) {
   return (
     <>
@@ -31,13 +33,24 @@ export default function MovieActions({
           Play
         </button>
       ) : (
-        <button
-          onClick={onFindTorrents}
-          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-7 py-3 rounded-xl transition-colors"
-        >
-          <Download size={18} />
-          Find Torrents
-        </button>
+        <>
+          {onStream && (
+            <button
+              onClick={onStream}
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-7 py-3 rounded-xl transition-colors"
+            >
+              <Radio size={18} />
+              Stream
+            </button>
+          )}
+          <button
+            onClick={onFindTorrents}
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-7 py-3 rounded-xl transition-colors"
+          >
+            <Download size={18} />
+            Find Torrents
+          </button>
+        </>
       )}
       {inLibrary ? (
         <button

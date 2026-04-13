@@ -5,9 +5,13 @@ import icon from '../../resources/icon.png?asset'
 import { registerMovieHandlers } from './ipc/movies'
 import { registerTorrentHandlers } from './ipc/torrents'
 import { registerDownloadHandlers } from './ipc/downloads'
+import { initDownloads, shutdownDownloads } from './services/download-lifecycle'
 import { registerLibraryHandlers } from './ipc/library'
 import { registerSettingsHandlers } from './ipc/settings'
+import { registerSubtitleHandlers } from './ipc/subtitles'
+import { registerStreamingHandlers } from './ipc/streaming'
 import { startVideoServer, getVideoServerPort } from './services/video-server'
+import { shutdownAllStreams } from './services/streaming-manager'
 import { windowConfig } from './config/window'
 
 function createWindow(): void {
@@ -78,6 +82,11 @@ app.whenReady().then(async () => {
   registerDownloadHandlers()
   registerLibraryHandlers()
   registerSettingsHandlers()
+  registerSubtitleHandlers()
+  registerStreamingHandlers()
+
+  // Restore download state after restart
+  await initDownloads()
 
   ipcMain.on('window:minimize', () => {
     BrowserWindow.getFocusedWindow()?.minimize()
@@ -97,6 +106,11 @@ app.whenReady().then(async () => {
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', () => {
+  shutdownAllStreams()
+  shutdownDownloads()
 })
 
 app.on('window-all-closed', () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowDown, Users, HardDrive, X, Download } from 'lucide-react'
+import { ArrowDown, Users, HardDrive, X, Download, Radio } from 'lucide-react'
 import LoadingSpinner from './loading-spinner'
 import type { TorrentResult } from '@shared/types'
 
@@ -9,6 +9,7 @@ interface TorrentResultsProps {
   imdbId: string
   onClose: () => void
   onDownload: (torrent: TorrentResult) => Promise<void>
+  streamMode?: boolean
 }
 
 const qualityColor: Record<string, string> = {
@@ -23,7 +24,8 @@ export default function TorrentResults({
   movieYear,
   imdbId,
   onClose,
-  onDownload
+  onDownload,
+  streamMode
 }: TorrentResultsProps) {
   const [results, setResults] = useState<TorrentResult[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,7 +57,9 @@ export default function TorrentResults({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-800">
           <div>
-            <h2 className="text-lg font-bold text-white">Available Torrents</h2>
+            <h2 className="text-lg font-bold text-white">
+              {streamMode ? 'Select Torrent to Stream' : 'Available Torrents'}
+            </h2>
             <p className="text-sm text-zinc-500 mt-0.5">
               {movieTitle} ({movieYear})
             </p>
@@ -117,19 +121,21 @@ export default function TorrentResults({
                   }}
                   className={`shrink-0 flex items-center gap-1.5 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors ${
                     downloadingIndex === i
-                      ? 'bg-blue-500/70 cursor-wait opacity-100'
+                      ? `${streamMode ? 'bg-emerald-500/70' : 'bg-blue-500/70'} cursor-wait opacity-100`
                       : downloadingIndex !== null
                         ? 'opacity-0 pointer-events-none'
-                        : 'bg-blue-500 hover:bg-blue-600 opacity-0 group-hover:opacity-100'
+                        : `${streamMode ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'} opacity-0 group-hover:opacity-100`
                   }`}
                 >
                   {downloadingIndex === i ? (
                     <>
-                      <LoadingSpinner size={14} className="" /> Starting…
+                      <LoadingSpinner size={14} className="" />{' '}
+                      {streamMode ? 'Loading…' : 'Starting…'}
                     </>
                   ) : (
                     <>
-                      <Download size={14} /> Download
+                      {streamMode ? <Radio size={14} /> : <Download size={14} />}{' '}
+                      {streamMode ? 'Stream' : 'Download'}
                     </>
                   )}
                 </button>

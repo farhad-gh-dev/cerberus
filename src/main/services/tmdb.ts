@@ -13,6 +13,7 @@ import type {
   TMDbMovieDetailFull
 } from '../types/tmdb'
 import { getSetting } from './settings'
+import { searchTorrents } from './torrent-search'
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p'
 
@@ -66,13 +67,15 @@ export async function findTmdbIdByImdbId(imdbId: string): Promise<number | null>
   }
 }
 
-export async function getTrendingMovies(): Promise<TrendingMovie[]> {
+export async function getTrendingMovies(page: number = 1): Promise<TrendingMovie[]> {
   try {
     const client = tmdbClient()
-    const { data } = await client.get<{ results: TMDbTrendingItem[] }>('/trending/movie/week')
+    const { data } = await client.get<{ results: TMDbTrendingItem[] }>('/trending/movie/week', {
+      params: { page }
+    })
     const movies = data.results?.slice(0, 20) || []
 
-    return await Promise.all(
+    const all = await Promise.all(
       movies.map(async (m) => {
         let imdbId: string | null = null
         try {
@@ -81,16 +84,31 @@ export async function getTrendingMovies(): Promise<TrendingMovie[]> {
         } catch {
           // Individual ID lookup failure is non-critical
         }
+
+        // Check torrent availability — skip movies with no torrents
+        let hasTorrents = false
+        if (imdbId) {
+          try {
+            const torrents = await searchTorrents(m.title, imdbId)
+            hasTorrents = torrents.length > 0
+          } catch {
+            // Torrent check failure — exclude the movie
+          }
+        }
+
         return {
           tmdbId: m.id,
           imdbId,
           title: m.title,
           year: year(m.release_date),
           posterUrl: imgUrl(m.poster_path),
-          rating: m.vote_average ? m.vote_average.toFixed(1) : ''
+          rating: m.vote_average ? m.vote_average.toFixed(1) : '',
+          hasTorrents
         }
       })
     )
+
+    return all.filter((m) => m.hasTorrents)
   } catch (err) {
     console.warn('[tmdb] getTrendingMovies failed:', err)
     return []
