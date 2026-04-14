@@ -1,6 +1,6 @@
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
-import Layout from './components/layout'
+import Layout from './components/layout/layout'
 import Home from './pages/home'
 import Library from './pages/library'
 import LibraryDetail from './pages/library-detail'
@@ -8,7 +8,7 @@ import Downloads from './pages/downloads'
 import DownloadDetail from './pages/download-detail'
 import Settings from './pages/settings'
 import Player from './pages/player'
-import LoadingSpinner from './components/loading-spinner'
+import LoadingSpinner from './components/ui/loading-spinner'
 
 // Dev-only preview pages (lazy loaded)
 const isDev = import.meta.env.DEV

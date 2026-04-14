@@ -4,11 +4,11 @@ import { X, Globe, Pause, Users, ArrowDownToLine, ArrowUpFromLine } from 'lucide
 import { useDownloadsStore } from '../stores/downloads'
 import { formatSpeed } from '../utils/formatters'
 import { usePeers } from '../hooks/use-peers'
-import PeerMap from '../components/peer-map'
+import PeerMap from '../components/peer/peer-map'
 import SpeedChart from '../components/speed-chart'
-import { PeerList } from '../components/peer-card'
-import { DownloadProgressRing } from '../components/download-progress-ring'
-import { CountryStats } from '../components/country-stats'
+import { PeerList } from '../components/peer/peer-card'
+import { DownloadProgressRing } from '../components/download/download-progress-ring'
+import { CountryStats } from '../components/peer/country-stats'
 
 export default function DownloadDetail() {
   const { downloadId } = useParams<{ downloadId: string }>()

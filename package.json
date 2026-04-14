@@ -18,7 +18,9 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -37,9 +39,15 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^5.1.2",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@storybook/addon-a11y": "^10.3.5",
+    "@storybook/addon-docs": "^10.3.5",
+    "@storybook/addon-onboarding": "^10.3.5",
+    "@storybook/addon-vitest": "^10.3.5",
+    "@storybook/react-vite": "^10.3.5",
     "@types/extract-zip": "^2.0.0",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",
@@ -47,6 +55,8 @@
     "@types/three": "^0.182.0",
     "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser-playwright": "^4.1.4",
+    "@vitest/coverage-v8": "^4.1.4",
     "electron": "^39.2.6",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
@@ -55,10 +65,14 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "eslint-plugin-storybook": "^10.3.5",
+    "playwright": "^1.59.1",
     "prettier": "^3.8.1",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "storybook": "^10.3.5",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "vitest": "^4.1.4"
   }
 }

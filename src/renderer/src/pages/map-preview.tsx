@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Play, Pause, RotateCcw } from 'lucide-react'
-import PeerMap from '../components/peer-map'
+import PeerMap from '../components/peer/peer-map'
 import type { PeerInfo } from '@shared/types'
 
 // Pool of possible peers that can join/leave the swarm

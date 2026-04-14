@@ -7,8 +7,8 @@ import PlayerBottomControls from './player-bottom-controls'
 import SubtitleOverlay from './subtitle-overlay'
 import OnlineSubtitlePanel from './online-subtitle-panel'
 import StreamingStatsOverlay from './streaming-stats-overlay'
-import LoadingSpinner from '../loading-spinner'
-import EmptyState from '../empty-state'
+import LoadingSpinner from '../ui/loading-spinner'
+import EmptyState from '../ui/empty-state'
 
 export default function PlayerContent({ title, backTo }: { title: string; backTo: string }) {
   const navigate = useNavigate()
