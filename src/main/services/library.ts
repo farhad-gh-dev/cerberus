@@ -180,39 +180,87 @@ export async function pickVideoDialog(): Promise<string | null> {
   return result.filePaths[0]
 }
 
-/**
- * Find subtitle files alongside a resolved video file.
- * Scans the same directory as the video for .srt, .vtt, .ass, .ssa, .sub files.
- */
+export async function pickVideosDialog(): Promise<string[]> {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  if (!win) return []
+  const extensions = [...VIDEO_EXTENSIONS].map((ext) => ext.slice(1))
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Select video files',
+    filters: [{ name: 'Video Files', extensions }],
+    properties: ['openFile', 'multiSelections']
+  })
+  if (result.canceled) return []
+  return result.filePaths
+}
+
+export async function pickFolderForVideosDialog(): Promise<string[]> {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  if (!win) return []
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Select folder containing videos',
+    properties: ['openDirectory']
+  })
+  if (result.canceled || result.filePaths.length === 0) return []
+  return findVideoFiles(result.filePaths[0])
+}
+
+// Match subs by video basename so a shared folder doesn't pull in other movies' subs.
+// Falls back to all subs in the folder only when there's a single video file.
 export function findSubtitleFiles(
   videoFilePath: string
 ): { filePath: string; label: string; language: string; format: string }[] {
   const dir = join(videoFilePath, '..')
-  const results: { filePath: string; label: string; language: string; format: string }[] = []
+  const videoBase = basename(videoFilePath, extname(videoFilePath)).toLowerCase()
+  const candidates: { filePath: string; label: string; format: string }[] = []
+  let videoCount = 0
 
   try {
     const entries = readdirSync(dir)
     for (const entry of entries) {
       const ext = extname(entry).toLowerCase()
-      if (!SUBTITLE_EXTENSIONS.has(ext)) continue
-
       const fullPath = join(dir, entry)
+
       try {
         if (statSync(fullPath).isDirectory()) continue
       } catch {
         continue
       }
 
-      const format = ext.slice(1) // Remove the dot
-      const label = basename(entry, ext)
+      if (VIDEO_EXTENSIONS.has(ext)) {
+        videoCount++
+        continue
+      }
 
-      results.push({ filePath: fullPath, label, language: '', format })
+      if (!SUBTITLE_EXTENSIONS.has(ext)) continue
+
+      candidates.push({
+        filePath: fullPath,
+        label: basename(entry, ext),
+        format: ext.slice(1)
+      })
     }
   } catch {
-    // directory not readable
+    return []
   }
 
-  return results
+  const matched = candidates.filter((c) => {
+    const subBase = c.label.toLowerCase()
+    return (
+      subBase === videoBase ||
+      subBase.startsWith(`${videoBase}.`) ||
+      subBase.startsWith(`${videoBase}_`) ||
+      subBase.startsWith(`${videoBase}-`)
+    )
+  })
+
+  const chosen = matched.length > 0 ? matched : videoCount <= 1 ? candidates : []
+
+  return chosen.map((c) => ({
+    filePath: c.filePath,
+    label: c.label,
+    language: '',
+    format: c.format
+  }))
 }
 
 /** Auto-add a completed download to the movie library. */

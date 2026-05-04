@@ -126,6 +126,32 @@ export class TorrentSession {
     t.on('done', this.handleDone)
     t.on('close', this.handleClose)
 
+    // End-game freeze fix: webtorrent's rarest-piece filter doesn't exclude
+    // pieces we already have, so getRarestPiece spins through the bitfield
+    // O(numPieces²) per wire near completion. Wrap the filter to skip them.
+    interface BitfieldLike {
+      get(i: number): boolean
+    }
+    interface RarityMapLike {
+      getRarestPiece(filter?: (i: number) => boolean): number
+    }
+    interface InternalTorrent {
+      bitfield: BitfieldLike
+      _rarityMap: RarityMapLike
+    }
+    t.once('ready', () => {
+      const it = t as unknown as InternalTorrent
+      const rarityMap = it._rarityMap
+      if (!rarityMap || typeof rarityMap.getRarestPiece !== 'function') return
+      const original = rarityMap.getRarestPiece.bind(rarityMap)
+      rarityMap.getRarestPiece = (filter) => {
+        const wrapped = filter
+          ? (i: number): boolean => !it.bitfield.get(i) && filter(i)
+          : (i: number): boolean => !it.bitfield.get(i)
+        return original(wrapped)
+      }
+    })
+
     this.armMetadataTimeout()
   }
 
@@ -196,11 +222,12 @@ export class TorrentSession {
 
   private handleMetadataReady = async (): Promise<void> => {
     this.clearMetadataTimer()
-    if (!this.torrentRef) return
+    const t = this.torrentRef
+    if (!t) return
 
     // Disk-space check now that we know the real length.
     try {
-      await ensureFreeSpace(this.savePath, this.torrentRef.length)
+      await ensureFreeSpace(this.savePath, t.length)
     } catch (err) {
       const e = err instanceof TorrentError ? err : classify(err)
       this.tearDownTorrent()
@@ -209,20 +236,23 @@ export class TorrentSession {
       return
     }
 
+    // Torrent may have torn down during the await — bail before deref.
+    if (this.torrentRef !== t || t.destroyed) return
+
     // Decide which files we're actually downloading. webtorrent's own
     // 'done' event requires *every* file's pieces to be in the bitfield,
     // so once we deselect extras we cannot rely on it — we track the
     // SELECTED files' per-file 'done' events instead.
     let selectedFiles: WebTorrent.File[]
     if (getSetting('keepExtras') !== true) {
-      const result = deselectExtras(this.torrentRef)
+      const result = deselectExtras(t)
       selectedFiles = result.selected
       if (result.deselectedCount > 0) {
         console.log(`[session/${this.id}] deselected ${result.deselectedCount} extra file(s)`)
       }
     } else {
       // keepExtras = true → every file is selected by webtorrent default
-      selectedFiles = this.torrentRef.files
+      selectedFiles = t.files
     }
 
     this.armFileCompletion(selectedFiles)
@@ -261,10 +291,13 @@ export class TorrentSession {
   }
 
   private handleDone = (): void => {
+    // Both t.on('done') and per-file f.once('done') can fire us — ignore reentry.
+    if (this.state === 'completed' || this.state === 'disposed') return
     this.stopStallProbe()
     this.transition('completed')
     this.events.onComplete?.()
-    this.tearDownTorrent()
+    // Defer: webtorrent uses `this.client` synchronously after emitting file 'done'.
+    setImmediate(() => this.tearDownTorrent())
   }
 
   private handleClose = (): void => {

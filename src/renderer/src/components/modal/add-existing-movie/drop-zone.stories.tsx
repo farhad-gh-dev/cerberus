@@ -5,7 +5,8 @@ const meta: Meta<typeof DropZone> = {
   title: 'Components/Modal/AddExistingMovie/DropZone',
   component: DropZone,
   argTypes: {
-    onPickFile: { action: 'pickFile' }
+    onPickFiles: { action: 'pickFiles' },
+    onPickFolder: { action: 'pickFolder' }
   },
   decorators: [
     (Story) => (

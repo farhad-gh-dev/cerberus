@@ -67,6 +67,8 @@ declare global {
           movieYear?: string
         ) => Promise<string | null>
         pickVideo: () => Promise<string | null>
+        pickVideos: () => Promise<string[]>
+        pickFolderVideos: () => Promise<string[]>
         setVideoPath: (id: number, filePath: string) => Promise<boolean>
         clearFile: (id: number, deleteSource?: boolean) => Promise<boolean>
         clear: () => Promise<boolean>

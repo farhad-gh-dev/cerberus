@@ -28,7 +28,7 @@ const DHT_BOOTSTRAP = [
 ]
 
 const MAX_CONNS: Record<PoolKind, number> = {
-  download: 55,
+  download: 80,
   stream: 80
 }
 

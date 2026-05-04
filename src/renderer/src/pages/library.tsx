@@ -149,9 +149,12 @@ export default function Library() {
       {showAddModal && (
         <AddExistingMovieModal
           onClose={() => setShowAddModal(false)}
-          onAdded={(movie) => {
-            setMovies((prev) => [movie, ...prev.filter((m) => m.imdbId !== movie.imdbId)])
-            setShowAddModal(false)
+          onAdded={(added, fullySucceeded) => {
+            setMovies((prev) => {
+              const ids = new Set(added.map((m) => m.imdbId))
+              return [...added, ...prev.filter((m) => !ids.has(m.imdbId))]
+            })
+            if (fullySucceeded) setShowAddModal(false)
           }}
         />
       )}

@@ -11,6 +11,8 @@ import {
   resolveVideoFile,
   openInPlayer,
   pickVideoDialog,
+  pickVideosDialog,
+  pickFolderForVideosDialog,
   findSubtitleFiles
 } from '../services/library'
 
@@ -40,6 +42,10 @@ export function registerLibraryHandlers(): void {
   )
 
   ipcMain.handle('library:pick-video', () => pickVideoDialog())
+
+  ipcMain.handle('library:pick-videos', () => pickVideosDialog())
+
+  ipcMain.handle('library:pick-folder-videos', () => pickFolderForVideosDialog())
 
   ipcMain.handle('library:set-video-path', (_event, id: number, filePath: string) =>
     updateMoviePath(id, filePath)

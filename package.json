@@ -27,6 +27,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.5",
+    "chardet": "^2.1.1",
     "cobe": "^0.6.5",
     "electron-updater": "^6.8.3",
     "extract-zip": "^2.0.1",

@@ -1,8 +1,29 @@
+import type WebTorrent from 'webtorrent'
 import type { DownloadItem } from '../../../shared/types'
 import type { DownloadRecord } from '../download-store'
 import type { TorrentSession } from './session'
 import { persistedStatus } from './state'
 import { safeNum } from '../download-helpers'
+
+interface BitfieldLike {
+  get(i: number): boolean
+}
+
+/** Bytes from fully verified pieces only (excludes in-progress blocks). */
+function verifiedBytes(t: WebTorrent.Torrent): number {
+  const internal = t as unknown as { bitfield?: BitfieldLike; pieceLength?: number }
+  const bitfield = internal.bitfield
+  const pieceLength = internal.pieceLength
+  const length = safeNum(t.length)
+  if (!bitfield || !pieceLength || length <= 0) return safeNum(t.downloaded)
+  const numPieces = Math.ceil(length / pieceLength)
+  const lastPieceLength = length - (numPieces - 1) * pieceLength
+  let bytes = 0
+  for (let i = 0; i < numPieces; i++) {
+    if (bitfield.get(i)) bytes += i === numPieces - 1 ? lastPieceLength : pieceLength
+  }
+  return bytes
+}
 
 /**
  * Build a DownloadItem from a live session + persisted record. Status
@@ -28,12 +49,13 @@ export function buildItem(session: TorrentSession, record: DownloadRecord): Down
 
   if (hasMetadata) {
     const length = safeNum(t!.length)
-    const downloadedRaw = safeNum(t!.downloaded)
+    // Verified-only so the UI doesn't regress when an end-game piece hash-fails.
+    const verified = verifiedBytes(t!)
     const speed = safeNum(t!.downloadSpeed)
-    downloaded = downloadedRaw
+    downloaded = verified
     totalSize = length
-    progress = length > 0 ? downloadedRaw / length : 0
-    timeRemaining = speed > 0 ? ((length - downloadedRaw) / speed) * 1000 : Infinity
+    progress = length > 0 ? verified / length : 0
+    timeRemaining = speed > 0 ? ((length - verified) / speed) * 1000 : Infinity
     downloadSpeed = speed
     uploadSpeed = safeNum(t!.uploadSpeed)
     peers = safeNum(t!.numPeers)

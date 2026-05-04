@@ -3,7 +3,7 @@ import { createWriteStream } from 'fs'
 import { join, dirname, basename, extname } from 'path'
 import { pipeline } from 'stream/promises'
 import { tmpdir } from 'os'
-import { readdir, rename, mkdtemp, rm, stat } from 'fs/promises'
+import { readdir, copyFile, mkdtemp, rm, stat } from 'fs/promises'
 import extract from 'extract-zip'
 import type { OnlineSubtitleResult, SubtitleTrack } from '../../shared/types'
 import { getSetting } from './settings'
@@ -112,7 +112,8 @@ export async function downloadSubdl(
 
     const subtitleName = basename(subtitlePath)
     const destPath = join(videoDir, subtitleName)
-    await rename(subtitlePath, destPath)
+    // copyFile (not rename) — temp dir and destination may be on different drives (EXDEV).
+    await copyFile(subtitlePath, destPath)
 
     const ext = extname(subtitleName).slice(1).toLowerCase() || 'srt'
     const label = subtitleName.replace(/\.[^.]+$/, '')

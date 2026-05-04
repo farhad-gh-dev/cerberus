@@ -21,6 +21,7 @@ import {
 } from '../progress-broadcaster'
 import { getPeers as buildPeerList } from '../peer-info'
 import { addCompletedMovieToLibrary } from '../library'
+import { getMovieByImdbId, clearFilePath } from '../../db'
 import { TorrentSession } from './session'
 import { buildItem, buildItemFromRecord } from './items'
 import { sanitizeMagnet } from './policies/magnet'
@@ -216,11 +217,26 @@ export async function cancelDownload(id: string, deleteFiles = false): Promise<b
     removePath(record?.rootPath)
   }
 
+  if (deleteFiles && record?.imdbId) {
+    clearLibraryFilePathIfStale(record.imdbId)
+  }
+
   removeRecord(id)
   emitProgressUpdate()
   if (sessions.size === 0) stopProgressBroadcast()
   await processQueue()
   return true
+}
+
+// Clear the library filePath if it now points at a missing path.
+function clearLibraryFilePathIfStale(imdbId: string): void {
+  const movie = getMovieByImdbId(imdbId)
+  if (!movie?.filePath) return
+  try {
+    statSync(movie.filePath)
+  } catch {
+    clearFilePath(movie.id)
+  }
 }
 
 export async function deleteDownload(id: string, deleteFiles = false): Promise<boolean> {

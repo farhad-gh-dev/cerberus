@@ -67,6 +67,8 @@ const api = {
     resolveVideo: (filePath: string, movieTitle?: string, movieYear?: string) =>
       ipcRenderer.invoke('library:resolve-video', filePath, movieTitle, movieYear),
     pickVideo: () => ipcRenderer.invoke('library:pick-video'),
+    pickVideos: () => ipcRenderer.invoke('library:pick-videos') as Promise<string[]>,
+    pickFolderVideos: () => ipcRenderer.invoke('library:pick-folder-videos') as Promise<string[]>,
     setVideoPath: (id: number, filePath: string) =>
       ipcRenderer.invoke('library:set-video-path', id, filePath),
     clearFile: (id: number, deleteSource?: boolean) =>
