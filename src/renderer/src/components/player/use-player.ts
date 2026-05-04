@@ -58,7 +58,8 @@ export function usePlayer(
     isFullscreen: controls.isFullscreen,
     showSpeedMenu: speed.showSpeedMenu,
     setShowSpeedMenu: speed.setShowSpeedMenu,
-    cycleSubtitleTrack: subtitles.cycleTrack
+    cycleSubtitleTrack: subtitles.cycleTrack,
+    locked: controls.locked
   })
 
   return {
@@ -87,6 +88,8 @@ export function usePlayer(
       containerRef: controls.containerRef,
       showControls: controls.showControls,
       isFullscreen: controls.isFullscreen,
+      locked: controls.locked,
+      toggleLock: controls.toggleLock,
       toggleFullscreen: controls.toggleFullscreen,
       togglePip: controls.togglePip,
       resetControlsTimer: controls.resetControlsTimer

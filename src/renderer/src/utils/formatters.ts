@@ -49,3 +49,13 @@ export function formatTime(seconds: number): string {
   if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   return `${m}:${s.toString().padStart(2, '0')}`
 }
+
+const languageNames = new Intl.DisplayNames(['en'], { type: 'language' })
+
+export function formatLanguage(code: string): string {
+  try {
+    return languageNames.of(code) ?? code
+  } catch {
+    return code
+  }
+}

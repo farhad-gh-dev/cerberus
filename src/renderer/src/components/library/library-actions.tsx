@@ -52,7 +52,7 @@ export default function LibraryActions({
       {!hasFile && (
         <button
           onClick={onFindTorrents}
-          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold px-7 py-3 rounded-xl transition-colors"
+          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-7 py-3 rounded-xl transition-colors"
         >
           <Download size={18} />
           Find Torrents

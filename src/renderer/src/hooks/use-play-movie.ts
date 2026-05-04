@@ -32,7 +32,7 @@ export function usePlayMovie({
     if (!file) return
     try {
       const settings = await window.api.settings.getAll()
-      if (settings && settings.externalPlayerPath) {
+      if (settings && settings.externalPlayerEnabled && settings.externalPlayerPath) {
         await run(() => window.api.library.openFile(file), 'Failed to open external player')
         return
       }

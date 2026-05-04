@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import ErrorBoundary from './error-boundary'
 
-function ThrowingComponent() {
+function ThrowingComponent(): never {
   throw new Error('Something went wrong in a child component')
 }
 

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { DownloadProgressRing } from './download-progress-ring'
 
 const meta: Meta<typeof DownloadProgressRing> = {
-  title: 'Components/DownloadProgressRing',
+  title: 'Components/Download/DownloadProgressRing',
   component: DownloadProgressRing,
   decorators: [
     (Story) => (

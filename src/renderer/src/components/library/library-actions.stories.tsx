@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import LibraryActions from './library-actions'
 
 const meta: Meta<typeof LibraryActions> = {
-  title: 'Components/LibraryActions',
+  title: 'Components/Library/LibraryActions',
   component: LibraryActions,
   argTypes: {
     onPlay: { action: 'play' },

@@ -17,7 +17,15 @@ const api = {
         backdrop: string | null
         poster: string | null
       }>,
-    trending: (page?: number) => ipcRenderer.invoke('tmdb:trending', page)
+    trending: (page?: number) => ipcRenderer.invoke('tmdb:trending', page),
+    popular: (page?: number) => ipcRenderer.invoke('tmdb:popular', page),
+    topRated: (page?: number) => ipcRenderer.invoke('tmdb:top-rated', page),
+    enrich: (tmdbId: number, title: string) =>
+      ipcRenderer.invoke('tmdb:enrich', tmdbId, title) as Promise<{
+        imdbId: string | null
+        runtime: string
+        hasTorrents: boolean
+      }>
   },
   torrent: {
     search: (query: string, imdbId?: string) => ipcRenderer.invoke('torrent:search', query, imdbId)
@@ -81,6 +89,17 @@ const api = {
     pickFolder: () => ipcRenderer.invoke('settings:pick-folder'),
     pickPlayer: () => ipcRenderer.invoke('settings:pick-player')
   },
+  updater: {
+    status: () => ipcRenderer.invoke('updater:status'),
+    check: () => ipcRenderer.invoke('updater:check'),
+    download: () => ipcRenderer.invoke('updater:download'),
+    install: () => ipcRenderer.invoke('updater:install'),
+    onStatus: (callback: (status: unknown) => void) => {
+      const handler = (_event: unknown, status: unknown): void => callback(status)
+      ipcRenderer.on('updater:status', handler)
+      return () => ipcRenderer.removeListener('updater:status', handler)
+    }
+  },
   stream: {
     start: (magnetLink: string) =>
       ipcRenderer.invoke('stream:start', magnetLink) as Promise<{
@@ -101,7 +120,11 @@ const api = {
       } | null>,
     seek: (id: string, byteOffset: number) =>
       ipcRenderer.invoke('stream:seek', id, byteOffset) as Promise<boolean>,
-    filePath: (id: string) => ipcRenderer.invoke('stream:file-path', id) as Promise<string | null>
+    filePath: (id: string) => ipcRenderer.invoke('stream:file-path', id) as Promise<string | null>,
+    openExternal: (id: string) =>
+      ipcRenderer.invoke('stream:open-external', id) as Promise<
+        { ok: true; url: string } | { ok: false; error: string }
+      >
   }
 }
 
@@ -113,8 +136,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore
+  // @ts-ignore (define in dts) — context isolation disabled fallback
   window.electron = electronAPI
-  // @ts-ignore
+  // @ts-ignore (define in dts) — context isolation disabled fallback
   window.api = api
 }

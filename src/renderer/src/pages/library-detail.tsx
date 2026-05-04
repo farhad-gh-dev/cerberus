@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { ArrowLeft, Film } from 'lucide-react'
 import TorrentResults from '../components/movie/torrent-results'
+import { useStreamMovie } from '../hooks/use-stream-movie'
 import ConfirmRemoveModal from '../components/modal/confirm-remove-modal'
-import LoadingSpinner from '../components/ui/loading-spinner'
+import PageLoader from '../components/ui/loading-spinner'
 import EmptyState from '../components/ui/empty-state'
 import MovieDetailLayout from '../components/movie/movie-detail-layout'
 import LibraryMeta from '../components/library/library-meta'
@@ -16,7 +17,6 @@ import { isValidField } from '../utils/formatters'
 
 export default function LibraryDetail() {
   const { imdbId } = useParams<{ imdbId: string }>()
-  const navigate = useNavigate()
   const [showTorrents, setShowTorrents] = useState(false)
   const [showRemoveModal, setShowRemoveModal] = useState(false)
   const [streamMode, setStreamMode] = useState(false)
@@ -42,21 +42,24 @@ export default function LibraryDetail() {
     navigateToLibrary
   } = useLibraryActions({ movie, resolvedVideo, imdbId, setMovie, setResolvedVideo })
 
+  const closeStreamOverlays = useCallback(() => {
+    setShowTorrents(false)
+    setStreamMode(false)
+  }, [])
+
+  const streamMovie = useStreamMovie({
+    title: movie?.title ?? '',
+    back: movie ? `/library/${movie.imdbId}` : '/library',
+    imdbId: movie?.imdbId,
+    beforeNavigate: closeStreamOverlays
+  })
+
   const handleStreamTorrent = useCallback(
     async (torrent: { magnetLink: string }) => {
       if (!movie) return
-      const result = await window.api.stream.start(torrent.magnetLink)
-      setShowTorrents(false)
-      setStreamMode(false)
-      const params = new URLSearchParams({
-        streamId: result.id,
-        title: movie.title,
-        back: `/library/${movie.imdbId}`
-      })
-      params.set('imdbId', movie.imdbId)
-      navigate(`/player?${params.toString()}`)
+      await streamMovie(torrent.magnetLink)
     },
-    [movie, navigate]
+    [movie, streamMovie]
   )
 
   const openStream = useCallback(() => {
@@ -64,14 +67,14 @@ export default function LibraryDetail() {
     setShowTorrents(true)
   }, [])
 
-  if (loading) return <LoadingSpinner className="h-full" />
+  if (loading) return <PageLoader className="h-full" />
 
   if (!movie) {
     return (
       <EmptyState
         icon={<Film size={48} />}
         title="Movie not found"
-        className="h-full text-zinc-500"
+        className="h-full"
         action={
           <button
             onClick={navigateToLibrary}
@@ -85,7 +88,7 @@ export default function LibraryDetail() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="fixed inset-0 z-40 bg-black overflow-y-auto">
       <MovieDetailLayout
         heroImage={heroImage}
         backdropLoading={backdropLoading}
@@ -131,9 +134,9 @@ export default function LibraryDetail() {
         <ConfirmRemoveModal
           movieTitle={movie.title}
           filePath={movie.filePath}
-          onConfirm={(del, rem) => {
+          onConfirm={(del) => {
             setShowRemoveModal(false)
-            handleRemove(del, rem)
+            handleRemove(del)
           }}
           onCancel={() => setShowRemoveModal(false)}
         />

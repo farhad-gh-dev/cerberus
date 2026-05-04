@@ -15,6 +15,7 @@ interface KeyboardShortcutDeps {
   setShowSpeedMenu: (show: boolean) => void
   videoRef: React.RefObject<HTMLVideoElement | null>
   cycleSubtitleTrack: () => void
+  locked: boolean
 }
 
 export function useKeyboardShortcuts({
@@ -30,12 +31,24 @@ export function useKeyboardShortcuts({
   showSpeedMenu,
   setShowSpeedMenu,
   videoRef,
-  cycleSubtitleTrack
+  cycleSubtitleTrack,
+  locked
 }: KeyboardShortcutDeps) {
   useEffect(() => {
+    const lockedAllowed = new Set([
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'j',
+      'l',
+      'f'
+    ])
+
     const handleKey = (e: KeyboardEvent): void => {
       const video = videoRef.current
       if (!video) return
+      if (locked && !lockedAllowed.has(e.key)) return
 
       switch (e.key) {
         case ' ':
@@ -114,6 +127,7 @@ export function useKeyboardShortcuts({
     showSpeedMenu,
     setShowSpeedMenu,
     videoRef,
-    cycleSubtitleTrack
+    cycleSubtitleTrack,
+    locked
   ])
 }

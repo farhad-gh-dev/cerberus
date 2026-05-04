@@ -16,6 +16,33 @@ import {
 export type { GlobeMarker, GlobeOptions }
 export { GLOBE_CONFIG }
 
+function disposeMaterial(mat: THREE.Material): void {
+  const shaderMat = mat as THREE.ShaderMaterial
+  if (shaderMat.uniforms) {
+    for (const key of Object.keys(shaderMat.uniforms)) {
+      const value = shaderMat.uniforms[key]?.value as THREE.Texture | undefined
+      if (value && (value as THREE.Texture).isTexture) value.dispose()
+    }
+  }
+  const map = (mat as THREE.SpriteMaterial | THREE.MeshBasicMaterial).map
+  if (map && map.isTexture) map.dispose()
+  mat.dispose()
+}
+
+function disposeObject(root: THREE.Object3D): void {
+  root.traverse((node) => {
+    const geom = (node as THREE.Mesh | THREE.Line).geometry
+    if (geom && typeof geom.dispose === 'function') geom.dispose()
+
+    const mat = (node as THREE.Mesh | THREE.Line | THREE.Sprite).material as
+      | THREE.Material
+      | THREE.Material[]
+      | undefined
+    if (Array.isArray(mat)) mat.forEach(disposeMaterial)
+    else if (mat) disposeMaterial(mat)
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Globe class
 // ---------------------------------------------------------------------------
@@ -197,12 +224,7 @@ export class SciFiGlobe {
         const entry = this.markerScales.get(key)
         if (entry) {
           this.markerGroup.remove(entry.group)
-          entry.group.traverse((obj) => {
-            if (obj instanceof THREE.Mesh || obj instanceof THREE.Line) {
-              obj.geometry?.dispose()
-              if (obj.material instanceof THREE.Material) obj.material.dispose()
-            }
-          })
+          disposeObject(entry.group)
           this.markerScales.delete(key)
         }
       }
@@ -239,19 +261,7 @@ export class SciFiGlobe {
     cancelAnimationFrame(this.animationId)
     this.resizeObserver?.disconnect()
 
-    this.scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        obj.geometry?.dispose()
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((m) => m.dispose())
-        } else if (obj.material) {
-          ;(obj.material as THREE.Material).dispose()
-        }
-      } else if (obj instanceof THREE.Line) {
-        obj.geometry?.dispose()
-        if (obj.material instanceof THREE.Material) obj.material.dispose()
-      }
-    })
+    disposeObject(this.scene)
 
     this.renderer.dispose()
     if (this.renderer.domElement.parentElement) {

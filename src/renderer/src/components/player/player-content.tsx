@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Lock } from 'lucide-react'
 import { usePlayerContext } from './player-context'
 import PlayerTopBar from './player-top-bar'
 import PlayerCenterOverlay from './player-center-overlay'
@@ -7,7 +7,7 @@ import PlayerBottomControls from './player-bottom-controls'
 import SubtitleOverlay from './subtitle-overlay'
 import OnlineSubtitlePanel from './online-subtitle-panel'
 import StreamingStatsOverlay from './streaming-stats-overlay'
-import LoadingSpinner from '../ui/loading-spinner'
+import PageLoader from '../ui/loading-spinner'
 import EmptyState from '../ui/empty-state'
 
 export default function PlayerContent({ title, backTo }: { title: string; backTo: string }) {
@@ -15,7 +15,7 @@ export default function PlayerContent({ title, backTo }: { title: string; backTo
   const { playback, controls, subtitles } = usePlayerContext()
 
   if (playback.loading) {
-    return <LoadingSpinner size={40} className="h-full bg-black" />
+    return <PageLoader size={40} className="h-full bg-black" />
   }
 
   if (playback.error || !playback.videoSrc) {
@@ -50,11 +50,12 @@ export default function PlayerContent({ title, backTo }: { title: string; backTo
         className="w-full h-full"
         onClick={(e) => {
           e.stopPropagation()
-          playback.togglePlay()
           controls.resetControlsTimer()
+          playback.togglePlay()
         }}
         onDoubleClick={(e) => {
           e.stopPropagation()
+          if (controls.locked) return
           controls.toggleFullscreen()
         }}
         onPlay={playback.handlePlay}
@@ -84,7 +85,7 @@ export default function PlayerContent({ title, backTo }: { title: string; backTo
       {/* Buffering spinner */}
       {playback.buffering && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <LoadingSpinner size={48} className="" />
+          <PageLoader size={48} className="" />
         </div>
       )}
 
@@ -94,10 +95,32 @@ export default function PlayerContent({ title, backTo }: { title: string; backTo
           controls.showControls ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <PlayerTopBar title={title} backTo={backTo} />
+        {!controls.locked && <PlayerTopBar title={title} backTo={backTo} />}
         <PlayerCenterOverlay />
-        <PlayerBottomControls />
+        {!controls.locked && <PlayerBottomControls />}
       </div>
+
+      {/* Unlock button (only visible when locked) */}
+      {controls.locked && (
+        <div
+          className={`absolute bottom-4 right-4 pointer-events-none transition-opacity duration-300 ${
+            controls.showControls ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              controls.toggleLock()
+              controls.resetControlsTimer()
+            }}
+            aria-label="Unlock controls"
+            title="Unlock"
+            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 flex items-center justify-center transition-colors pointer-events-auto"
+          >
+            <Lock size={20} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

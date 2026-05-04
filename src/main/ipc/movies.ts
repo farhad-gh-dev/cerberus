@@ -2,8 +2,11 @@ import { ipcMain } from 'electron'
 import {
   getBackdropByImdbId,
   getTrendingMovies,
+  getPopularMovies,
+  getTopRatedMovies,
   searchMovies,
-  getMovieDetails
+  getMovieDetails,
+  enrichMovie
 } from '../services/tmdb'
 
 export function registerMovieHandlers(): void {
@@ -21,5 +24,17 @@ export function registerMovieHandlers(): void {
 
   ipcMain.handle('tmdb:trending', async (_event, page?: number) => {
     return getTrendingMovies(page)
+  })
+
+  ipcMain.handle('tmdb:popular', async (_event, page?: number) => {
+    return getPopularMovies(page)
+  })
+
+  ipcMain.handle('tmdb:top-rated', async (_event, page?: number) => {
+    return getTopRatedMovies(page)
+  })
+
+  ipcMain.handle('tmdb:enrich', async (_event, tmdbId: number, title: string) => {
+    return enrichMovie(tmdbId, title)
   })
 }

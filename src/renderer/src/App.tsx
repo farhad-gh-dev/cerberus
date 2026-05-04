@@ -8,7 +8,7 @@ import Downloads from './pages/downloads'
 import DownloadDetail from './pages/download-detail'
 import Settings from './pages/settings'
 import Player from './pages/player'
-import LoadingSpinner from './components/ui/loading-spinner'
+import PageLoader from './components/ui/loading-spinner'
 
 // Dev-only preview pages (lazy loaded)
 const isDev = import.meta.env.DEV
@@ -31,7 +31,7 @@ export default function App() {
             <Route
               path="/map-preview"
               element={
-                <Suspense fallback={<LoadingSpinner />}>
+                <Suspense fallback={<PageLoader />}>
                   <MapPreview />
                 </Suspense>
               }
@@ -41,7 +41,7 @@ export default function App() {
             <Route
               path="/chart-preview"
               element={
-                <Suspense fallback={<LoadingSpinner />}>
+                <Suspense fallback={<PageLoader />}>
                   <ChartPreview />
                 </Suspense>
               }

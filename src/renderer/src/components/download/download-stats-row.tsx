@@ -13,7 +13,7 @@ export default function StatsRow({ item }: { item: DownloadItem }) {
   const isWaiting = isQueued || isOnHold
 
   return (
-    <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
+    <div className="flex items-center gap-4 mt-2 text-xs text-custom-600 dark:text-custom-400">
       {/* Progress % — always for active states, only when partial for waiting */}
       {(!isWaiting || pct > 0) && <span>{pct}%</span>}
 
@@ -26,10 +26,18 @@ export default function StatsRow({ item }: { item: DownloadItem }) {
 
       {/* Waiting-state messages */}
       {isQueued && (
-        <span className={pct > 0 ? 'text-zinc-600' : ''}>Waiting for a download slot…</span>
+        <span className={pct > 0 ? 'text-custom-700 dark:text-custom-200' : ''}>
+          Waiting for a download slot…
+        </span>
       )}
       {isOnHold && (
-        <span className={pct > 0 ? 'text-zinc-600' : 'text-orange-400/60'}>
+        <span
+          className={
+            pct > 0
+              ? 'text-custom-700 dark:text-custom-200'
+              : 'text-orange-500/80 dark:text-orange-400/80'
+          }
+        >
           On hold — won't auto-start
         </span>
       )}

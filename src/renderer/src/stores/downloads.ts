@@ -1,9 +1,11 @@
 import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 import type { DownloadItem } from '@shared/types'
 import { withErrorToast } from '../hooks/use-async-action'
 
 interface DownloadsState {
-  downloads: DownloadItem[]
+  ids: string[]
+  byId: Record<string, DownloadItem>
   init: () => () => void
   start: (magnetLink: string, name: string, imdbId?: string) => Promise<string | undefined>
   startMagnet: (magnetLink: string, name: string) => Promise<string | undefined>
@@ -17,14 +19,68 @@ interface DownloadsState {
   reorderQueue: (orderedIds: string[]) => Promise<boolean | undefined>
 }
 
+// Keeps ids and per-row byId references stable so memoised rows don't re-render
+// on every progress tick — only items whose fields actually changed produce new refs.
+function applySnapshot(
+  state: { ids: string[]; byId: Record<string, DownloadItem> },
+  items: DownloadItem[]
+): Partial<DownloadsState> {
+  const nextIds: string[] = new Array(items.length)
+  const nextById: Record<string, DownloadItem> = {}
+  let idsChanged = items.length !== state.ids.length
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    nextIds[i] = item.id
+    if (!idsChanged && state.ids[i] !== item.id) idsChanged = true
+
+    const prev = state.byId[item.id]
+    if (prev && shallowEqualItem(prev, item)) {
+      nextById[item.id] = prev
+    } else {
+      nextById[item.id] = item
+    }
+  }
+
+  if (!idsChanged) {
+    let any = false
+    for (const id of nextIds) {
+      if (nextById[id] !== state.byId[id]) {
+        any = true
+        break
+      }
+    }
+    if (!any) return {}
+  }
+
+  return { ids: idsChanged ? nextIds : state.ids, byId: nextById }
+}
+
+function shallowEqualItem(a: DownloadItem, b: DownloadItem): boolean {
+  return (
+    a.status === b.status &&
+    a.progress === b.progress &&
+    a.downloadSpeed === b.downloadSpeed &&
+    a.uploadSpeed === b.uploadSpeed &&
+    a.downloaded === b.downloaded &&
+    a.totalSize === b.totalSize &&
+    a.timeRemaining === b.timeRemaining &&
+    a.peers === b.peers &&
+    a.priority === b.priority &&
+    a.completedAt === b.completedAt &&
+    a.name === b.name
+  )
+}
+
 export const useDownloadsStore = create<DownloadsState>((set) => ({
-  downloads: [],
+  ids: [],
+  byId: {},
   init: () => {
     withErrorToast(() => window.api.download.list(), 'Failed to load downloads').then((items) => {
-      if (items) set({ downloads: items })
+      if (items) set((s) => applySnapshot(s, items))
     })
     const unsubscribe = window.api.download.onProgress((items) => {
-      set({ downloads: items })
+      set((s) => applySnapshot(s, items as DownloadItem[]))
     })
     return unsubscribe
   },
@@ -49,3 +105,15 @@ export const useDownloadsStore = create<DownloadsState>((set) => ({
   reorderQueue: (orderedIds) =>
     withErrorToast(() => window.api.download.reorderQueue(orderedIds), 'Failed to reorder queue')
 }))
+
+export function useDownloads(): DownloadItem[] {
+  return useDownloadsStore(useShallow((s) => s.ids.map((id) => s.byId[id])))
+}
+
+export function useDownloadById(id: string | undefined): DownloadItem | undefined {
+  return useDownloadsStore((s) => (id ? s.byId[id] : undefined))
+}
+export function getDownloadsSnapshot(): DownloadItem[] {
+  const s = useDownloadsStore.getState()
+  return s.ids.map((id) => s.byId[id])
+}

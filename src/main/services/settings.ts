@@ -1,7 +1,8 @@
 import { app } from 'electron'
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import type { AppSettings } from '../../shared/types'
+import { createJsonWriter } from './json-writer'
 
 const SETTINGS_FILE = join(app.getPath('userData'), 'settings.json')
 
@@ -9,13 +10,17 @@ const defaults: AppSettings = {
   downloadPath: join(app.getPath('downloads'), 'Cerberus'),
   tmdbApiKey: '',
   externalPlayerPath: '',
+  externalPlayerEnabled: true,
   maxConcurrentDownloads: 2,
   subtitleProvider: 'subdl',
   openSubtitlesApiKey: '',
-  subdlApiKey: ''
+  subdlApiKey: '',
+  utpEnabled: false,
+  keepExtras: true
 }
 
 let cache: AppSettings | null = null
+const writer = createJsonWriter<AppSettings>(SETTINGS_FILE)
 
 function load(): AppSettings {
   if (cache) return cache
@@ -39,7 +44,11 @@ export function setSetting<K extends keyof AppSettings>(key: K, value: AppSettin
   const settings = load()
   settings[key] = value
   cache = settings
-  writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2))
+  writer.schedule(settings)
+}
+
+export function flushSettingsSync(): void {
+  writer.flushSync()
 }
 
 export function getAllSettings(): AppSettings {

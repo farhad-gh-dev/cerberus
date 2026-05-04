@@ -1,5 +1,5 @@
 import type { LibraryMovie } from '@shared/types'
-import type { SortOption } from '../components/library-toolbar'
+import type { SortOption } from '../components/library/library-toolbar'
 
 export function sortMovies(movies: LibraryMovie[], sort: SortOption): LibraryMovie[] {
   const sorted = [...movies]

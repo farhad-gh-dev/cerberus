@@ -38,15 +38,18 @@ Cerberus is an all-in-one desktop application for discovering, downloading, stre
 ## Features
 
 - **Movie Discovery** — Search and browse trending movies via the TMDb API. View detailed metadata including cast, crew, ratings, plot summaries, and backdrop images. Torrent availability is checked automatically before displaying results.
-- **Torrent Search & Download** — Search for torrents through the YTS source (pluggable architecture for additional sources). Start downloads from magnet links with pause, resume, cancel, and delete controls. Duplicate magnet detection prevents re-downloading the same torrent.
-- **Download Queue** — Configurable max concurrent downloads (default: 2). Priority-based queue with reordering and hold/unhold support. Download state is persisted and automatically restored on app restart.
-- **Torrent Streaming** — Stream torrents directly from a magnet link without downloading the full file first. Sequential download strategy with first/last piece prioritization for MP4 moov atom handling. Managed streaming sessions with file-level prioritization.
+- **Torrent Search & Download** — Search for torrents through the YTS source (pluggable architecture for additional sources). Start downloads from magnet links with pause, resume, cancel, and delete controls. Duplicate magnet detection compares info-hashes (not raw magnet text) to prevent re-downloading the same torrent.
+- **Resilient Torrent Engine** — Modular subsystem with an explicit per-torrent state machine, magnet sanitization (curated tracker list, stripped user trackers/web seeds), debounced re-announce coordinator, stall watchdog with automatic queue demotion, metadata-resolution timeout with retry backoff, and pre-flight disk-space checks. Pause is a real pause — the wire pool, bitfield, and rarity map survive across pause/resume.
+- **Download Queue** — Configurable max concurrent downloads (default: 2). Priority-based queue with reordering and hold/unhold support. Download state is persisted via a debounced, crash-safe JSON writer (atomic `.tmp` + rename) and automatically restored on app restart.
+- **Torrent Streaming** — Stream torrents directly from a magnet link without downloading the full file first. Sequential download strategy with first/last piece prioritization for MP4 moov atom handling. Streaming runs on an isolated WebTorrent pool, so stopping a stream can never destroy the on-disk store of a download sharing the same info-hash.
 - **Personal Library** — Automatically adds completed downloads to your library. Manually add existing movies from your device. Search and filter your collection. Smart video file resolution that searches subdirectories for the largest video file.
 - **Built-in Video Player** — Watch movies directly inside the app with a custom HTML5 player featuring keyboard shortcuts, playback speed control (0.25×–2×), seek bar, and volume control. Alternatively, launch an external player of your choice (e.g., VLC, mpv).
 - **Subtitles** — Search and download subtitles via two providers: OpenSubtitles and Subdl. Filter by language, auto-convert SRT to VTT for HTML5 playback, and automatically discover local subtitle files (SRT, VTT, ASS, SSA, SUB). Provider selection is configurable in Settings.
 - **Real-time Download Analytics** — Live speed charts for upload and download bandwidth. Interactive 3D globe visualization showing peer locations worldwide. Per-peer stats including client name, speed, progress, and geolocation. Country-level peer distribution breakdown.
 - **Local Video Server** — Built-in HTTP server with range-request support for seamless video streaming of local files (supports MP4, MKV, AVI, MOV, WebM, M4V, WMV).
 - **Peer Geolocation** — Batch IP geolocation via ip-api.com supporting up to 100 IPs per request. Smart batching with debounce, in-memory caching, and automatic filtering of private/local IP addresses.
+- **Auto-updates** — Background update checks every 6 hours via electron-updater. Surface available versions, release notes, and download progress in Settings, with one-click download and quit-and-install.
+- **Light & Dark Themes** — Toggle between light and dark modes; preference is persisted across sessions.
 - **Cross-platform** — Builds for Windows (NSIS installer), macOS (DMG), and Linux (AppImage, Snap, Deb).
 
 ## Tech Stack
@@ -64,7 +67,9 @@ Cerberus is an all-in-one desktop application for discovering, downloading, stre
 | Subtitles        | [OpenSubtitles API](https://www.opensubtitles.com/), [Subdl API](https://subdl.com/)     |
 | Geolocation      | [ip-api.com](http://ip-api.com/) (batch endpoint)                                        |
 | HTTP Requests    | [Axios](https://axios-http.com/)                                                         |
+| Auto-updates     | [electron-updater](https://www.electron.build/auto-update)                               |
 | Bundler          | [Vite](https://vite.dev/) 7                                                              |
+| Component Dev    | [Storybook](https://storybook.js.org/) 10                                                |
 | Linting          | [ESLint](https://eslint.org/) 9, [Prettier](https://prettier.io/)                        |
 | Packaging        | [electron-builder](https://www.electron.build/)                                          |
 
@@ -108,43 +113,65 @@ npm run dev
 
 ## Available Scripts
 
-| Script                | Description                                       |
-| --------------------- | ------------------------------------------------- |
-| `npm run dev`         | Start the app in development mode with hot-reload |
-| `npm run build`       | Type-check and build the app for production       |
-| `npm run build:win`   | Build and package for Windows (NSIS installer)    |
-| `npm run build:mac`   | Build and package for macOS (DMG)                 |
-| `npm run build:linux` | Build and package for Linux (AppImage, Snap, Deb) |
-| `npm run start`       | Preview the production build                      |
-| `npm run typecheck`   | Run TypeScript type checking (Node + Web)         |
-| `npm run lint`        | Lint the codebase with ESLint                     |
-| `npm run format`      | Format the codebase with Prettier                 |
+| Script                    | Description                                        |
+| ------------------------- | -------------------------------------------------- |
+| `npm run dev`             | Start the app in development mode with hot-reload  |
+| `npm run build`           | Type-check and build the app for production        |
+| `npm run build:win`       | Build and package for Windows (NSIS installer)     |
+| `npm run build:mac`       | Build and package for macOS (DMG)                  |
+| `npm run build:linux`     | Build and package for Linux (AppImage, Snap, Deb)  |
+| `npm run start`           | Preview the production build                       |
+| `npm run typecheck`       | Run TypeScript type checking (Node + Web)          |
+| `npm run lint`            | Lint the codebase with ESLint                      |
+| `npm run format`          | Format the codebase with Prettier                  |
+| `npm run storybook`       | Start Storybook for isolated component development |
+| `npm run build-storybook` | Build a static Storybook site                      |
 
 ## Architecture
 
 Cerberus follows Electron's multi-process architecture with a clear separation of concerns:
 
-- **Main Process** — Manages the WebTorrent client, download lifecycle and queue, TMDb/YTS API calls, subtitle fetching (OpenSubtitles & Subdl), torrent streaming sessions, a local HTTP video server, IP geolocation, and JSON-based persistence. IPC handlers expose these capabilities to the renderer.
+- **Main Process** — Hosts the modular torrent engine (download + isolated streaming pools), TMDb/YTS API calls, subtitle fetching (OpenSubtitles & Subdl), a local HTTP video server, IP geolocation, the auto-updater, and JSON-based persistence (debounced + crash-safe). IPC handlers expose these capabilities to the renderer.
 - **Preload Script** — Provides a secure `window.api` bridge using Electron's `contextBridge`, exposing typed IPC methods without granting the renderer direct access to Node.js APIs.
-- **Renderer Process** — A React SPA with client-side routing (HashRouter). Uses Zustand for state management, Tailwind CSS for styling, Three.js/Cobe for the 3D peer globe, and a custom HTML5 video player with subtitle support.
+- **Renderer Process** — A React SPA with client-side routing (HashRouter). Uses Zustand for state management (downloads, settings, theme, updater), Tailwind CSS for styling, Three.js/Cobe for the 3D peer globe, and a custom HTML5 video player with subtitle support.
 
 ```
 src/
-├── main/                  # Main process
-│   ├── config/            # Tracker lists, window configuration
-│   ├── db/                # JSON-based library persistence
-│   ├── ipc/               # IPC handlers (downloads, library, movies, settings, streaming, subtitles, torrents)
-│   ├── services/          # Core services (download manager, streaming, video server, TMDb, geolocation, subtitles, etc.)
-│   └── types/             # TMDb types, WebTorrent declarations
-├── preload/               # Secure contextBridge API
-├── renderer/              # React frontend
+├── main/                       # Main process
+│   ├── config/                 # Tracker lists, window configuration
+│   ├── db/                     # JSON-based library persistence
+│   ├── ipc/                    # IPC handlers (downloads, library, movies, settings,
+│   │                           #   streaming, subtitles, torrents, updater)
+│   ├── services/
+│   │   ├── torrent/            # Modular torrent subsystem
+│   │   │   ├── engine.ts             # Queue, activation, lifecycle orchestration
+│   │   │   ├── session.ts            # Per-torrent runtime
+│   │   │   ├── state.ts              # Explicit FSM
+│   │   │   ├── pool.ts               # WebTorrent client pool (download)
+│   │   │   ├── stream-engine.ts      # Isolated streaming pool
+│   │   │   ├── announce-coordinator.ts # Debounced re-announce
+│   │   │   ├── disk-guard.ts         # Pre-flight free-space check
+│   │   │   ├── errors.ts             # Typed errors + classifier
+│   │   │   ├── items.ts              # FSM-derived item snapshots
+│   │   │   └── policies/             # Magnet sanitization, file selection,
+│   │   │                             #   streaming piece priority
+│   │   ├── cache.ts            # TTL cache w/ in-flight de-duplication
+│   │   ├── json-writer.ts      # Debounced, crash-safe JSON persistence
+│   │   ├── updater.ts          # electron-updater integration
+│   │   ├── video-server.ts     # Local HTTP server with range-request support
+│   │   ├── tmdb.ts, subdl.ts, opensubtitles.ts, geolocation.ts, library.ts, ...
+│   │   └── sources/            # Pluggable torrent search sources (YTS, ...)
+│   └── types/                  # TMDb types, WebTorrent declarations
+├── preload/                    # Secure contextBridge API
+├── renderer/                   # React frontend
 │   └── src/
-│       ├── components/    # UI components (player, globe, modals, download rows, etc.)
-│       ├── hooks/         # Custom React hooks
-│       ├── pages/         # Route pages (home, library, downloads, player, settings)
-│       ├── stores/        # Zustand stores (downloads, settings, toast)
-│       └── utils/         # Shared utilities
-└── shared/                # Types shared between main and renderer
+│       ├── components/         # UI components (player, globe, modals, download rows,
+│       │                       #   settings sections, layout/top bars, etc.)
+│       ├── hooks/              # Custom React hooks
+│       ├── pages/              # Route pages (home, library, downloads, player, settings)
+│       ├── stores/             # Zustand stores (downloads, settings, toast, theme, updater)
+│       └── utils/              # Shared utilities
+└── shared/                     # Types shared between main and renderer
 ```
 
 ## License

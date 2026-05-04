@@ -129,32 +129,34 @@ export default function ChartPreview() {
   }
 
   return (
-    <div className="h-full flex bg-[#111316]">
+    <div className="h-full flex bg-custom-100 dark:bg-custom-900">
       {/* Left sidebar — peer cards preview */}
-      <div className="w-1/3 border-r border-zinc-800/50 flex flex-col min-h-0">
+      <div className="w-1/3 border-r border-custom-200 dark:border-custom-700/60 flex flex-col min-h-0">
         {/* Header: close button left, title right */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 relative z-[60] [-webkit-app-region:no-drag]">
           <button
             onClick={() => navigate(-1)}
-            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-custom-50 text-custom-500 hover:text-custom-800 transition-colors dark:bg-transparent dark:text-custom-400 dark:hover:bg-custom-700 dark:hover:text-custom-50"
           >
             <X size={14} />
           </button>
-          <h1 className="text-sm font-semibold text-white truncate ml-3">Preview Movie</h1>
+          <h1 className="text-sm font-semibold text-custom-800 dark:text-custom-50 truncate ml-3">
+            Preview Movie
+          </h1>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-zinc-800/30">
+        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-custom-200 dark:border-custom-700/60">
           <button
             onClick={() => setRunning(!running)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-white transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-custom-200 bg-custom-50 px-3 py-1.5 text-xs text-custom-700 transition-colors hover:bg-custom-100 dark:border-custom-700 dark:bg-custom-800/30 dark:text-custom-200 dark:hover:bg-custom-700/50"
           >
             {running ? <Pause size={12} /> : <Play size={12} />}
             {running ? 'Pause' : 'Resume'}
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-white transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-custom-200 bg-custom-50 px-3 py-1.5 text-xs text-custom-700 transition-colors hover:bg-custom-100 dark:border-custom-700 dark:bg-custom-800/30 dark:text-custom-200 dark:hover:bg-custom-700/50"
           >
             <RotateCcw size={12} />
             Reset
@@ -171,11 +173,11 @@ export default function ChartPreview() {
               return (
                 <div
                   key={peer.id}
-                  className="bg-zinc-900/70 rounded-2xl p-4 border border-zinc-800/40 hover:border-zinc-700/50 transition-colors"
+                  className="rounded-2xl border border-custom-200 bg-custom-50/60 p-4 transition-colors hover:border-custom-300 dark:border-custom-700/60 dark:bg-custom-800/60 dark:hover:border-custom-700"
                 >
                   {/* Top row: flag + address + dots */}
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700/50 overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-custom-200 flex items-center justify-center shrink-0 border border-custom-300/60 overflow-hidden dark:bg-custom-800 dark:border-custom-700/50">
                       {peer.location?.countryCode ? (
                         <img
                           src={flagUrl(peer.location.countryCode)}
@@ -183,12 +185,14 @@ export default function ChartPreview() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Globe size={16} className="text-zinc-500" />
+                        <Globe size={16} className="text-custom-500 dark:text-custom-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{peer.address}</p>
-                      <p className="text-[11px] text-zinc-500 truncate">
+                      <p className="text-sm font-medium text-custom-800 dark:text-custom-50 truncate">
+                        {peer.address}
+                      </p>
+                      <p className="text-[11px] text-custom-500 dark:text-custom-400 truncate">
                         {peer.location
                           ? `${peer.location.city}${peer.location.city && peer.location.country ? ', ' : ''}${peer.location.country}`
                           : peer.client || 'Unknown location'}
@@ -196,7 +200,7 @@ export default function ChartPreview() {
                     </div>
                     <button
                       onClick={() => setSelectedPeer(selectedPeer === peer.id ? null : peer.id)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+                      className="w-7 h-7 flex items-center justify-center rounded-full text-custom-500 transition-colors hover:bg-custom-100 hover:text-custom-800 dark:text-custom-400 dark:hover:bg-custom-700 dark:hover:text-custom-100 shrink-0"
                     >
                       <MoreHorizontal size={14} />
                     </button>
@@ -206,21 +210,23 @@ export default function ChartPreview() {
                   <div className="flex items-center justify-between mt-5">
                     <span
                       className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${
-                        isActive ? 'bg-yellow-500/20 text-yellow-400' : 'bg-zinc-800 text-zinc-500'
+                        isActive
+                          ? 'bg-yellow-500/15 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400'
+                          : 'bg-custom-200 text-custom-500 dark:bg-custom-800 dark:text-custom-400'
                       }`}
                     >
                       {isActive ? 'Active' : 'Idle'}
                     </span>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-[10px] text-zinc-500">Down</p>
-                        <p className="text-sm font-semibold text-green-400">
+                        <p className="text-[10px] text-custom-500 dark:text-custom-400">Down</p>
+                        <p className="text-sm font-semibold text-green-500 dark:text-green-400">
                           {peer.downloadSpeed > 0 ? formatSpeed(peer.downloadSpeed) : '--'}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] text-zinc-500">Up</p>
-                        <p className="text-sm font-semibold text-blue-400">
+                        <p className="text-[10px] text-custom-500 dark:text-custom-400">Up</p>
+                        <p className="text-sm font-semibold text-blue-500 dark:text-blue-400">
                           {peer.uploadSpeed > 0 ? formatSpeed(peer.uploadSpeed) : '--'}
                         </p>
                       </div>
@@ -229,24 +235,26 @@ export default function ChartPreview() {
 
                   {/* Expanded details */}
                   {selectedPeer === peer.id && (
-                    <div className="mt-3 pt-3 border-t border-zinc-800/50 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]">
+                    <div className="mt-3 pt-3 border-t border-custom-200 dark:border-custom-700/50 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]">
                       <div>
-                        <span className="text-zinc-600">Port: </span>
-                        <span className="text-zinc-400">{peer.port}</span>
+                        <span className="text-custom-500 dark:text-custom-500">Port: </span>
+                        <span className="text-custom-700 dark:text-custom-300">{peer.port}</span>
                       </div>
                       <div>
-                        <span className="text-zinc-600">Client: </span>
-                        <span className="text-zinc-400">{peer.client}</span>
+                        <span className="text-custom-500 dark:text-custom-500">Client: </span>
+                        <span className="text-custom-700 dark:text-custom-300">{peer.client}</span>
                       </div>
                       {peer.location && (
                         <>
                           <div>
-                            <span className="text-zinc-600">ISP: </span>
-                            <span className="text-zinc-400">{peer.location.isp}</span>
+                            <span className="text-custom-500 dark:text-custom-500">ISP: </span>
+                            <span className="text-custom-700 dark:text-custom-300">
+                              {peer.location.isp}
+                            </span>
                           </div>
                           <div>
-                            <span className="text-zinc-600">Coords: </span>
-                            <span className="text-zinc-400">
+                            <span className="text-custom-500 dark:text-custom-500">Coords: </span>
+                            <span className="text-custom-700 dark:text-custom-300">
                               {peer.location.lat.toFixed(2)}, {peer.location.lon.toFixed(2)}
                             </span>
                           </div>
@@ -260,7 +268,7 @@ export default function ChartPreview() {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-2.5 border-t border-zinc-800/50 text-[10px] text-zinc-600 flex items-center gap-1.5">
+        <div className="px-5 py-2.5 border-t border-custom-200 dark:border-custom-700/60 text-[10px] text-custom-500 dark:text-custom-500 flex items-center gap-1.5">
           <Globe size={10} />
           {peers.filter((p) => p.location).length} of {peers.length} peers geolocated
         </div>
@@ -270,18 +278,26 @@ export default function ChartPreview() {
       <div className="w-2/3 flex flex-col p-6 gap-6">
         {/* Current speeds */}
         <div className="flex gap-4">
-          <div className="bg-zinc-900/60 rounded-xl p-4 border border-zinc-800/40 flex-1">
-            <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Download</p>
-            <p className="text-xl font-bold text-green-400">{formatBytes(downloadSpeed)}</p>
+          <div className="rounded-xl border border-custom-200 bg-custom-50/60 p-4 flex-1 dark:border-custom-700/60 dark:bg-custom-800/60">
+            <p className="text-[10px] uppercase tracking-wider text-custom-500 dark:text-custom-400 mb-1">
+              Download
+            </p>
+            <p className="text-xl font-bold text-green-500 dark:text-green-400">
+              {formatBytes(downloadSpeed)}
+            </p>
           </div>
-          <div className="bg-zinc-900/60 rounded-xl p-4 border border-zinc-800/40 flex-1">
-            <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Upload</p>
-            <p className="text-xl font-bold text-blue-400">{formatBytes(uploadSpeed)}</p>
+          <div className="rounded-xl border border-custom-200 bg-custom-50/60 p-4 flex-1 dark:border-custom-700/60 dark:bg-custom-800/60">
+            <p className="text-[10px] uppercase tracking-wider text-custom-500 dark:text-custom-400 mb-1">
+              Upload
+            </p>
+            <p className="text-xl font-bold text-blue-500 dark:text-blue-400">
+              {formatBytes(uploadSpeed)}
+            </p>
           </div>
         </div>
 
         {/* Chart — large preview */}
-        <div className="flex-1 min-h-0 rounded-2xl overflow-hidden border border-zinc-800/30 bg-[#0a0a12]">
+        <div className="flex-1 min-h-0 rounded-2xl overflow-hidden border border-custom-200 dark:border-custom-700/60 bg-custom-50/60 dark:bg-[#0a0a12]">
           <SpeedChart downloadSpeed={downloadSpeed} uploadSpeed={uploadSpeed} />
         </div>
       </div>

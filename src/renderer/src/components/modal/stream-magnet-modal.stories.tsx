@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import StreamMagnetModal from './stream-magnet-modal'
 
 const meta: Meta<typeof StreamMagnetModal> = {
-  title: 'Components/StreamMagnetModal',
+  title: 'Components/Modal/StreamMagnetModal',
   component: StreamMagnetModal,
   argTypes: {
     onClose: { action: 'close' },

@@ -5,6 +5,9 @@ export interface MovieSearchItem {
   title: string
   year: string
   posterUrl: string
+  rating: string
+  genres: string[]
+  language: string
 }
 
 export interface MovieSearchResponse {
@@ -26,6 +29,7 @@ export interface MovieDetail {
   writer: string
   actors: string
   plot: string
+  language: string
   posterUrl: string
   backdropUrl: string
   rating: string
@@ -91,9 +95,19 @@ export interface TrendingMovie {
   tmdbId: number
   imdbId: string | null
   title: string
+  originalTitle: string
+  originalLanguage: string
+  overview: string
   year: string
   posterUrl: string
+  backdropUrl: string
+  genreIds: number[]
+  genres: string[]
+  popularity: number
   rating: string
+  runtime: string
+  voteCount: number
+  adult: boolean
 }
 
 // ---------- App-level types ----------
@@ -102,10 +116,15 @@ export interface AppSettings {
   downloadPath: string
   tmdbApiKey: string
   externalPlayerPath: string
+  externalPlayerEnabled: boolean
   maxConcurrentDownloads: number
   subtitleProvider: 'opensubtitles' | 'subdl'
   openSubtitlesApiKey: string
   subdlApiKey: string
+  /** Enable µTP transport for the WebTorrent client. Default off (Windows ENOBUFS source). */
+  utpEnabled: boolean
+  /** Download every file in a torrent rather than auto-deselecting samples/NFOs. */
+  keepExtras: boolean
 }
 
 export interface LibraryMovie {
@@ -120,6 +139,7 @@ export interface LibraryMovie {
   actors: string
   imdbRating: string
   runtime: string
+  language: string
   filePath?: string
   addedAt: string
 }
@@ -129,6 +149,7 @@ export interface DownloadItem {
   name: string
   magnetLink: string
   savePath: string
+  imdbId?: string
   status: 'downloading' | 'paused' | 'completed' | 'error' | 'queued' | 'on-hold'
   progress: number
   downloadSpeed: number
@@ -139,6 +160,7 @@ export interface DownloadItem {
   peers: number
   isCustom?: boolean
   priority: number
+  completedAt?: string
 }
 
 // ---------- Peer types ----------
@@ -186,4 +208,30 @@ export interface OnlineSubtitleResult {
   format: string
   /** Direct download URL (Subdl) — OpenSubtitles uses its own download endpoint */
   downloadUrl?: string
+}
+
+// ---------- Auto-updater ----------
+
+export type UpdaterPhase =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'not-available'
+  | 'downloading'
+  | 'downloaded'
+  | 'error'
+
+export interface UpdaterStatus {
+  phase: UpdaterPhase
+  currentVersion: string
+  availableVersion: string | null
+  releaseNotes: string | null
+  releaseName: string | null
+  releaseDate: string | null
+  downloadPercent: number
+  bytesPerSecond: number
+  transferred: number
+  total: number
+  error: string | null
+  lastCheckedAt: number | null
 }

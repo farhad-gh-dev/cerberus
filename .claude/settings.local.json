@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(kill %1)",
+      "Bash(pkill -f electron-vite)",
+      "Bash(npm i *)",
+      "Bash(npx electron-vite *)",
+      "Bash(npx eslint *)"
+    ]
+  }
+}

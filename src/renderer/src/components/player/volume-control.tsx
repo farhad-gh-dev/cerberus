@@ -25,10 +25,7 @@ export default function VolumeControl() {
         onMouseDown={vol.onVolumeMouseDown}
       >
         <div className="absolute left-0 right-0 h-1 bg-white/20 rounded-full">
-          <div
-            className="h-full bg-white rounded-full"
-            style={{ width: `${displayVolume}%` }}
-          />
+          <div className="h-full bg-white rounded-full" style={{ width: `${displayVolume}%` }} />
         </div>
         <div
           className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow opacity-0 group-hover/vol:opacity-100 transition-opacity pointer-events-none"

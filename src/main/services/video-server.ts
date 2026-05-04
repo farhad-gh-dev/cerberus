@@ -1,8 +1,46 @@
-import { createServer, type Server } from 'http'
+import { createServer, type Server, type ServerResponse } from 'http'
 import { createReadStream, statSync } from 'fs'
 import { extname } from 'path'
+import type { Readable } from 'stream'
 import { convertSrtToVtt } from './subtitle-converter'
-import { getStreamingSession } from './streaming-manager'
+import { getStreamingSession, touchSession, seekStream } from './torrent/stream-engine'
+
+// Only re-prioritize pieces when the jump exceeds this — smaller deltas are
+// normal sequential reads / metadata probes and would just thrash priorities.
+const SEEK_THRESHOLD_BYTES = 4 * 1024 * 1024
+const lastRangeStartBySession = new Map<string, number>()
+
+// Tear down both halves on stream error: a silent stall after a promised
+// Content-Length hangs external players; a destroyed socket is a recoverable read error.
+function pipeWithErrorHandling(stream: Readable, res: ServerResponse): void {
+  let cleaned = false
+  const cleanup = (): void => {
+    if (cleaned) return
+    cleaned = true
+    try {
+      stream.unpipe?.(res)
+    } catch {
+      // ignore: cleanup is best-effort
+    }
+    try {
+      stream.destroy()
+    } catch {
+      // ignore: cleanup is best-effort
+    }
+  }
+
+  stream.on('error', () => {
+    cleanup()
+    try {
+      res.destroy()
+    } catch {
+      // ignore: cleanup is best-effort
+    }
+  })
+  res.on('close', cleanup)
+  res.on('error', cleanup)
+  stream.pipe(res)
+}
 
 let server: Server | null = null
 let port = 0
@@ -27,7 +65,8 @@ export function startVideoServer(): Promise<number> {
         const filePath = url.searchParams.get('path')
 
         // ── Streaming route: serve video data from a live WebTorrent file ──
-        if (url.pathname === '/stream') {
+        // Trailing `/<filename>` is a title hint for external players.
+        if (url.pathname === '/stream' || url.pathname.startsWith('/stream/')) {
           const sessionId = url.searchParams.get('id')
           if (!sessionId) {
             res.writeHead(400)
@@ -42,6 +81,8 @@ export function startVideoServer(): Promise<number> {
             return
           }
 
+          touchSession(sessionId)
+
           const file = session.file
           const fileSize = file.length
           const ext = extname(file.name).toLowerCase()
@@ -54,6 +95,16 @@ export function startVideoServer(): Promise<number> {
             const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1
             const chunkSize = end - start + 1
 
+            // External players don't call stream:seek IPC; re-prioritize pieces
+            // server-side. In-app player invokes seekStream directly, so skip it.
+            if (session.external && start > 0) {
+              const last = lastRangeStartBySession.get(sessionId) ?? -Infinity
+              if (Math.abs(start - last) >= SEEK_THRESHOLD_BYTES) {
+                seekStream(sessionId, start)
+                lastRangeStartBySession.set(sessionId, start)
+              }
+            }
+
             res.writeHead(206, {
               'Content-Range': `bytes ${start}-${end}/${fileSize}`,
               'Accept-Ranges': 'bytes',
@@ -63,16 +114,7 @@ export function startVideoServer(): Promise<number> {
             })
 
             const stream = file.createReadStream({ start, end })
-            stream.on('error', () => {})
-            stream.pipe(res)
-            res.on('close', () => {
-              try {
-                stream.unpipe?.(res)
-              } catch {}
-              try {
-                stream.destroy()
-              } catch {}
-            })
+            pipeWithErrorHandling(stream, res)
           } else {
             res.writeHead(200, {
               'Content-Length': fileSize,
@@ -82,16 +124,7 @@ export function startVideoServer(): Promise<number> {
             })
 
             const stream = file.createReadStream()
-            stream.on('error', () => {})
-            stream.pipe(res)
-            res.on('close', () => {
-              try {
-                stream.unpipe?.(res)
-              } catch {}
-              try {
-                stream.destroy()
-              } catch {}
-            })
+            pipeWithErrorHandling(stream, res)
           }
           return
         }
@@ -147,7 +180,7 @@ export function startVideoServer(): Promise<number> {
             'Access-Control-Allow-Origin': '*'
           })
 
-          createReadStream(filePath, { start, end }).pipe(res)
+          pipeWithErrorHandling(createReadStream(filePath, { start, end }), res)
         } else {
           res.writeHead(200, {
             'Content-Length': fileSize,
@@ -156,7 +189,7 @@ export function startVideoServer(): Promise<number> {
             'Access-Control-Allow-Origin': '*'
           })
 
-          createReadStream(filePath).pipe(res)
+          pipeWithErrorHandling(createReadStream(filePath), res)
         }
       } catch {
         res.writeHead(404)
@@ -186,4 +219,5 @@ export function stopVideoServer(): void {
     server.close()
     server = null
   }
+  lastRangeStartBySession.clear()
 }

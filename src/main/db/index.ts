@@ -1,7 +1,8 @@
 import { app } from 'electron'
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync, rmSync, statSync } from 'fs'
+import { readFileSync, existsSync, rmSync, statSync } from 'fs'
 import type { LibraryMovie } from '../../shared/types'
+import { createJsonWriter } from '../services/json-writer'
 
 interface LibraryData {
   nextId: number
@@ -11,6 +12,7 @@ interface LibraryData {
 const DATA_FILE = join(app.getPath('userData'), 'library.json')
 
 let data: LibraryData | null = null
+const writer = createJsonWriter<LibraryData>(DATA_FILE)
 
 function load(): LibraryData {
   if (data) return data
@@ -27,7 +29,11 @@ function load(): LibraryData {
 }
 
 function save(): void {
-  writeFileSync(DATA_FILE, JSON.stringify(load(), null, 2))
+  writer.schedule(load())
+}
+
+export function flushLibrarySync(): void {
+  writer.flushSync()
 }
 
 /** Delete a file or directory from disk, ignoring errors if it's already missing. */

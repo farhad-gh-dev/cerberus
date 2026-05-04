@@ -12,10 +12,10 @@ export const CountryStats = memo(function CountryStats({ countries }: CountrySta
       {countries.map(([country, count]) => (
         <div
           key={country}
-          className="bg-zinc-900/60 border border-zinc-800/40 rounded-lg px-3 py-1.5 text-[10px] whitespace-nowrap"
+          className="rounded-lg border border-custom-200 bg-custom-50/60 px-3 py-1.5 text-[10px] whitespace-nowrap dark:border-custom-700/60 dark:bg-custom-800/60"
         >
-          <span className="text-zinc-400 font-medium">{country}</span>
-          <span className="text-zinc-600 ml-1.5">{count}</span>
+          <span className="font-medium text-custom-700 dark:text-custom-200">{country}</span>
+          <span className="ml-1.5 text-custom-500 dark:text-custom-500">{count}</span>
         </div>
       ))}
     </div>

@@ -392,11 +392,11 @@ export default function MapPreview() {
           (p) => p.location && getContinent(p.location.countryCode) === continentFilter
         )
   const filteredPoolRef = useRef(filteredPool)
-  filteredPoolRef.current = filteredPool
+  useEffect(() => {
+    filteredPoolRef.current = filteredPool
+  }, [filteredPool])
 
   const [peers, setPeers] = useState<PeerInfo[]>(() => pickRandom(PEER_POOL, 4))
-  const peersRef = useRef(peers)
-  peersRef.current = peers
 
   const tick = useCallback(() => {
     setPeers((prev) => {

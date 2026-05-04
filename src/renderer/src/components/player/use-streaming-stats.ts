@@ -36,9 +36,8 @@ export function useStreamingStats(streamId: string | undefined): StreamingStats 
       }
     }
 
-    // Initial fetch + interval
     poll()
-    timerRef.current = setInterval(poll, 1000)
+    timerRef.current = setInterval(poll, 2000)
 
     return () => {
       if (timerRef.current) {

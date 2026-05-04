@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { useDownloadsStore } from '../stores/downloads'
+import { useRef, useState, useMemo } from 'react'
+import { useDownloadsStore, useDownloads } from '../stores/downloads'
 import type { DownloadItem } from '@shared/types'
 
 export type Section = 'active' | 'queued' | 'on-hold' | 'completed' | 'error'
@@ -37,10 +37,12 @@ function applyTransition(
 }
 
 export function useDownloadDragDrop() {
-  const downloads = useDownloadsStore((s) => s.downloads)
+  const downloads = useDownloads()
   const reorderQueue = useDownloadsStore((s) => s.reorderQueue)
-  const { resume, hold, unhold } = useDownloadsStore()
-  const ops = { hold, unhold, resume }
+  const resume = useDownloadsStore((s) => s.resume)
+  const hold = useDownloadsStore((s) => s.hold)
+  const unhold = useDownloadsStore((s) => s.unhold)
+  const ops = useMemo(() => ({ hold, unhold, resume }), [hold, unhold, resume])
 
   const [dragId, setDragId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
@@ -48,9 +50,10 @@ export function useDownloadDragDrop() {
   const rowCtr = useRef<Record<string, number>>({})
   const secCtr = useRef<Record<string, number>>({})
 
-  const queued = downloads
-    .filter((d) => d.status === 'queued')
-    .sort((a, b) => a.priority - b.priority)
+  const queued = useMemo(
+    () => downloads.filter((d) => d.status === 'queued').sort((a, b) => a.priority - b.priority),
+    [downloads]
+  )
   const dragSourceSection = dragId ? sectionOf(downloads.find((d) => d.id === dragId)!) : null
 
   function resetDrag() {

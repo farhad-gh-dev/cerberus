@@ -34,7 +34,7 @@ export const DownloadProgressRing = memo(function DownloadProgressRing({
           cy="40"
           r={RING_RADIUS}
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
+          className="stroke-custom-200 dark:stroke-white/10"
           strokeWidth="7"
           strokeLinecap="round"
         />
@@ -44,18 +44,21 @@ export const DownloadProgressRing = memo(function DownloadProgressRing({
           cy="40"
           r={RING_RADIUS}
           fill="none"
-          stroke="white"
+          className="stroke-custom-800 dark:stroke-white transition-all duration-500"
           strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={RING_CIRCUMFERENCE}
           strokeDashoffset={offset}
-          className="transition-all duration-500"
         />
       </svg>
       {/* Center label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-sm font-bold text-white">{formatBytes(downloaded)}</span>
-        <span className="text-[10px] text-zinc-500">/ {formatBytes(totalSize)}</span>
+        <span className="text-sm font-bold text-custom-800 dark:text-custom-50">
+          {formatBytes(downloaded)}
+        </span>
+        <span className="text-[10px] text-custom-500 dark:text-custom-400">
+          / {formatBytes(totalSize)}
+        </span>
       </div>
     </div>
   )

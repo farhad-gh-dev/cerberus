@@ -7,14 +7,14 @@ export default function PlayerCenterOverlay() {
   if (playback.playing || playback.buffering) return null
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <button
         onClick={(e) => {
           e.stopPropagation()
           playback.togglePlay()
         }}
         aria-label="Play"
-        className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 flex items-center justify-center transition-colors"
+        className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 flex items-center justify-center transition-colors pointer-events-auto"
       >
         <Play size={36} className="ml-1" />
       </button>

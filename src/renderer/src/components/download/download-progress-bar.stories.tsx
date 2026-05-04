@@ -3,7 +3,7 @@ import type { DownloadItem } from '@shared/types'
 import ProgressBar from './download-progress-bar'
 
 const meta: Meta<typeof ProgressBar> = {
-  title: 'Components/DownloadProgressBar',
+  title: 'Components/Download/DownloadProgressBar',
   component: ProgressBar,
   decorators: [
     (Story) => (
@@ -41,22 +41,10 @@ export const Completed: Story = {
   args: { item: { ...baseItem, status: 'completed', progress: 1 } }
 }
 
-export const Paused: Story = {
-  args: { item: { ...baseItem, status: 'paused', progress: 0.6 } }
-}
-
 export const Queued: Story = {
   args: { item: { ...baseItem, status: 'queued', progress: 0 } }
 }
 
 export const QueuedPartial: Story = {
   args: { item: { ...baseItem, status: 'queued', progress: 0.3 } }
-}
-
-export const OnHold: Story = {
-  args: { item: { ...baseItem, status: 'on-hold', progress: 0 } }
-}
-
-export const Error: Story = {
-  args: { item: { ...baseItem, status: 'error', progress: 0.2 } }
 }

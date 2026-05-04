@@ -1,9 +1,9 @@
 import axios from 'axios'
 import { createWriteStream } from 'fs'
-import { join, dirname } from 'path'
+import { join, dirname, basename, extname } from 'path'
 import { pipeline } from 'stream/promises'
 import { tmpdir } from 'os'
-import { readdir, rename, mkdtemp, rm } from 'fs/promises'
+import { readdir, rename, mkdtemp, rm, stat } from 'fs/promises'
 import extract from 'extract-zip'
 import type { OnlineSubtitleResult, SubtitleTrack } from '../../shared/types'
 import { getSetting } from './settings'
@@ -102,31 +102,20 @@ export async function downloadSubdl(
     const response = await axios.get(downloadUrl, { responseType: 'stream' })
     await pipeline(response.data, createWriteStream(zipPath))
 
-    // Extract ZIP contents
     await extract(zipPath, { dir: tempDir })
 
-    // Find the first subtitle file in extracted contents
-    const files = await readdir(tempDir)
-    let subtitleFile: string | null = null
+    const subtitlePath = await findSubtitleRecursively(tempDir, subtitleExts)
 
-    for (const file of files) {
-      const ext = '.' + file.split('.').pop()?.toLowerCase()
-      if (subtitleExts.has(ext)) {
-        subtitleFile = file
-        break
-      }
-    }
-
-    if (!subtitleFile) {
+    if (!subtitlePath) {
       throw new Error('No subtitle file found in the downloaded archive')
     }
 
-    // Move subtitle to video directory
-    const destPath = join(videoDir, subtitleFile)
-    await rename(join(tempDir, subtitleFile), destPath)
+    const subtitleName = basename(subtitlePath)
+    const destPath = join(videoDir, subtitleName)
+    await rename(subtitlePath, destPath)
 
-    const ext = subtitleFile.split('.').pop()?.toLowerCase() || 'srt'
-    const label = subtitleFile.replace(/\.[^.]+$/, '')
+    const ext = extname(subtitleName).slice(1).toLowerCase() || 'srt'
+    const label = subtitleName.replace(/\.[^.]+$/, '')
 
     return {
       filePath: destPath,
@@ -135,7 +124,23 @@ export async function downloadSubdl(
       format: ext
     }
   } finally {
-    // Cleanup temp directory
     await rm(tempDir, { recursive: true, force: true }).catch(() => {})
   }
+}
+
+// Subdl archives sometimes nest the subtitle inside a folder; recurse so we don't miss it.
+async function findSubtitleRecursively(dir: string, exts: Set<string>): Promise<string | null> {
+  const entries = await readdir(dir).catch(() => [] as string[])
+  for (const entry of entries) {
+    const full = join(dir, entry)
+    const info = await stat(full).catch(() => null)
+    if (!info) continue
+    if (info.isDirectory()) {
+      const nested = await findSubtitleRecursively(full, exts)
+      if (nested) return nested
+    } else if (exts.has(extname(entry).toLowerCase())) {
+      return full
+    }
+  }
+  return null
 }

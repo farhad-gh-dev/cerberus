@@ -1,4 +1,3 @@
-import { Star } from 'lucide-react'
 import type { MovieDetail } from '@shared/types'
 import { isValidField } from '../../utils/formatters'
 
@@ -20,19 +19,6 @@ function SectionHeader({ children }: { children: string }) {
 export default function MovieSidePanel({ movie, cast, directors, writers }: MovieSidePanelProps) {
   return (
     <>
-      {isValidField(movie.rating) && (
-        <div className="mb-8">
-          <SectionHeader>Rating</SectionHeader>
-          <div className="flex items-center gap-2 mt-1">
-            <Star size={16} className="text-yellow-400" fill="currentColor" />
-            <span className="text-sm font-semibold text-white">{movie.rating} / 10</span>
-            {isValidField(movie.votes) && (
-              <span className="text-xs text-white/40">({movie.votes} votes)</span>
-            )}
-          </div>
-        </div>
-      )}
-
       {cast.length > 0 && (
         <div className="mb-8">
           <SectionHeader>Actors</SectionHeader>
@@ -59,7 +45,7 @@ export default function MovieSidePanel({ movie, cast, directors, writers }: Movi
       {writers.length > 0 && (
         <div className="mb-6">
           <SectionHeader>Writer</SectionHeader>
-          <p className="text-sm text-white/70">{writers.join(', ')}</p>
+          <p className="text-sm text-white/70">{writers.slice(0, 5).join(', ')}</p>
         </div>
       )}
 

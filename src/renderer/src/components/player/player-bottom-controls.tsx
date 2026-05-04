@@ -5,7 +5,8 @@ import {
   SkipForward,
   Maximize,
   Minimize,
-  PictureInPicture2
+  PictureInPicture2,
+  Lock
 } from 'lucide-react'
 import { formatTime } from '../../utils/formatters'
 import { usePlayerContext } from './player-context'
@@ -79,6 +80,19 @@ export default function PlayerBottomControls() {
         <div className="flex items-center gap-1">
           <SpeedMenu />
           <SubtitleMenu />
+
+          {/* Lock */}
+          <button
+            onClick={stop(() => {
+              controls.toggleLock()
+              controls.resetControlsTimer()
+            })}
+            aria-label="Lock controls"
+            title="Lock controls"
+            className="w-10 h-10 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
+            <Lock size={18} />
+          </button>
 
           {/* Picture-in-Picture */}
           <button

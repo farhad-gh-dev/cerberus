@@ -109,21 +109,28 @@ export default function PeerMap({ peers, maxBandwidth }: PeerMapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Update markers and focus when peers or grouping changes
   useEffect(() => {
     if (!globeRef.current) return
     globeRef.current.updateMarkers(buildMarkers())
+  }, [peers, maxBandwidth, buildMarkers, shouldGroupPeers])
+
+  // Re-focus only when the top peer's identity changes — `topPeer` itself
+  // is a fresh ref every poll.
+  const topPeerAddress = topPeer?.address
+  useEffect(() => {
+    if (!globeRef.current) return
     if (topPeer?.location) {
       globeRef.current.lookAt(topPeer.location.lat, topPeer.location.lon)
     } else {
       globeRef.current.clearFocus()
     }
-  }, [peers, maxBandwidth, topPeer, buildMarkers, shouldGroupPeers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topPeerAddress])
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden rounded-2xl bg-[#080810]"
+      className="relative w-full h-full overflow-hidden rounded-2xl bg-custom-900"
     >
       {/* Radial vignette */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.8)_100%)] z-10 pointer-events-none" />
@@ -131,7 +138,7 @@ export default function PeerMap({ peers, maxBandwidth }: PeerMapProps) {
       {/* Group toggle */}
       <button
         onClick={() => setShouldGroupPeers((v) => !v)}
-        className="absolute bottom-3 right-3 z-20 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur text-xs text-white/80 transition-colors"
+        className="absolute bottom-3 right-3 z-20 px-3 py-1.5 rounded-lg backdrop-blur text-xs transition-colors bg-custom-50/10 hover:bg-custom-50/20 text-custom-50/80"
       >
         {shouldGroupPeers ? 'Show Individual Peers' : 'Group by Country'}
       </button>

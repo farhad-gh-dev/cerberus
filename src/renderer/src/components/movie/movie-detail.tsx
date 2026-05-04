@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { X, AlertCircle } from 'lucide-react'
+import { ArrowLeft, AlertCircle } from 'lucide-react'
 import type { TorrentResult } from '@shared/types'
 import TorrentResults from './torrent-results'
 import { useDownloadsStore } from '../../stores/downloads'
 import { usePlayMovie } from '../../hooks/use-play-movie'
+import { useStreamMovie } from '../../hooks/use-stream-movie'
 import { useMovieDetail } from '../../hooks/use-movie-detail'
-import LoadingSpinner from '../ui/loading-spinner'
+import PageLoader from '../ui/loading-spinner'
 import EmptyState from '../ui/empty-state'
 import MovieDetailLayout from './movie-detail-layout'
 import MovieMeta from './movie-meta'
@@ -20,7 +20,6 @@ interface MovieDetailProps {
 }
 
 export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: MovieDetailProps) {
-  const navigate = useNavigate()
   const startDownload = useDownloadsStore((s) => s.start)
   const [showTorrents, setShowTorrents] = useState(false)
   const [streamMode, setStreamMode] = useState(false)
@@ -71,39 +70,42 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
     setStreamMode(false)
   }, [])
 
+  const closeOverlays = useCallback(() => {
+    setShowTorrents(false)
+    setStreamMode(false)
+    onClose()
+  }, [onClose])
+
+  const streamMovie = useStreamMovie({
+    title: movie?.title ?? '',
+    back: '/',
+    imdbId: movie?.imdbId,
+    beforeNavigate: closeOverlays
+  })
+
   const handleStreamTorrent = useCallback(
     async (torrent: TorrentResult) => {
       if (!movie) return
-      const result = await window.api.stream.start(torrent.magnetLink)
-      setShowTorrents(false)
-      setStreamMode(false)
-      const params = new URLSearchParams({
-        streamId: result.id,
-        title: movie.title,
-        back: '/'
-      })
-      if (movie.imdbId) params.set('imdbId', movie.imdbId)
-      onClose()
-      navigate(`/player?${params.toString()}`)
+      await streamMovie(torrent.magnetLink)
     },
-    [movie, onClose, navigate]
+    [movie, streamMovie]
   )
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/80">
-        <LoadingSpinner className="h-full" />
+      <div className="fixed inset-0 z-40 bg-black/80">
+        <PageLoader className="h-full" />
       </div>
     )
   }
 
   if (!movie) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+      <div className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center">
         <EmptyState
           icon={<AlertCircle size={48} className="text-red-400" />}
           title="Movie not found"
-          className="text-zinc-400"
+          className="text-custom-400"
           action={
             <button
               onClick={onClose}
@@ -118,8 +120,8 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black" onClick={onClose}>
-      <div className="h-full w-full overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-40 bg-black">
+      <div className="h-full w-full overflow-y-auto">
         <MovieDetailLayout
           heroImage={heroImage}
           backdropLoading={backdropLoading}
@@ -129,9 +131,10 @@ export default function MovieDetail({ tmdbId, imdbId: imdbIdProp, onClose }: Mov
           navButton={
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 z-50 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors"
+              className="absolute top-10 left-6 z-50 flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
             >
-              <X size={20} />
+              <ArrowLeft size={18} />
+              Back to Home
             </button>
           }
           meta={<MovieMeta movie={movie} />}

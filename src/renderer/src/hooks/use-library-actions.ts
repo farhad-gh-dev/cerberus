@@ -35,22 +35,13 @@ export function useLibraryActions({
   })
 
   const handleRemove = useCallback(
-    (deleteSource: boolean, removeFromLibrary: boolean) => {
+    (deleteSource: boolean) => {
       if (!movie) return
-      if (removeFromLibrary) {
-        run(() => window.api.library.remove(movie.id, deleteSource), 'Failed to remove movie', {
-          onSuccess: () => navigate('/library')
-        })
-      } else {
-        run(() => window.api.library.clearFile(movie.id, deleteSource), 'Failed to update movie', {
-          onSuccess: () => {
-            setMovie((prev) => (prev ? { ...prev, filePath: undefined } : prev))
-            setResolvedVideo(null)
-          }
-        })
-      }
+      run(() => window.api.library.remove(movie.id, deleteSource), 'Failed to remove movie', {
+        onSuccess: () => navigate('/library')
+      })
     },
-    [movie, run, navigate, setMovie, setResolvedVideo]
+    [movie, run, navigate]
   )
 
   const handleOpenFolder = useCallback(() => {

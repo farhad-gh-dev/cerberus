@@ -1,11 +1,11 @@
 import axios from 'axios'
 import type { PeerLocation } from '../../shared/types'
+import { TtlCache } from './cache'
 
-// In-memory cache to avoid re-fetching the same IP
-const cache = new Map<string, PeerLocation | null>()
+const cache = new TtlCache<PeerLocation | null>(24 * 60 * 60 * 1000, 5000)
 
 // Batch queue for ip-api.com (supports up to 100 IPs per batch request)
-let batchQueue: { ip: string; resolve: (loc: PeerLocation | null) => void }[] = []
+const batchQueue: { ip: string; resolve: (loc: PeerLocation | null) => void }[] = []
 let batchTimer: ReturnType<typeof setTimeout> | null = null
 
 function processBatch(): void {
@@ -77,8 +77,9 @@ export function geolocateIp(ip: string): Promise<PeerLocation | null> {
     return Promise.resolve(null)
   }
 
-  if (cache.has(cleanIp)) {
-    return Promise.resolve(cache.get(cleanIp) ?? null)
+  const cached = cache.get(cleanIp)
+  if (cached !== undefined) {
+    return Promise.resolve(cached)
   }
 
   return new Promise((resolve) => {

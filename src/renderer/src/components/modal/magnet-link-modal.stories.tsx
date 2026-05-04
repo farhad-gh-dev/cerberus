@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import MagnetLinkModal from './magnet-link-modal'
 
 const meta: Meta<typeof MagnetLinkModal> = {
-  title: 'Components/MagnetLinkModal',
+  title: 'Components/Modal/MagnetLinkModal',
   component: MagnetLinkModal,
   argTypes: {
     onClose: { action: 'close' },

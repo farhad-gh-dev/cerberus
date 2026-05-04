@@ -3,7 +3,7 @@ import type { LibraryMovie } from '@shared/types'
 import LibraryMeta from './library-meta'
 
 const meta: Meta<typeof LibraryMeta> = {
-  title: 'Components/LibraryMeta',
+  title: 'Components/Library/LibraryMeta',
   component: LibraryMeta,
   decorators: [
     (Story) => (
@@ -30,7 +30,8 @@ const fullMovie: LibraryMovie = {
   imdbRating: '8.8',
   runtime: '148 min',
   filePath: 'C:\\Movies\\Inception.mkv',
-  addedAt: '2024-01-15T10:00:00Z'
+  addedAt: '2024-01-15T10:00:00Z',
+  language: 'English'
 }
 
 export const Default: Story = {

@@ -25,21 +25,17 @@ export default function MovieDetailLayout({
   actions,
   sidePanel,
   footer
-}: MovieDetailLayoutProps) {
+}: MovieDetailLayoutProps): ReactNode {
   return (
     <div className="relative min-h-screen">
       {/* Background image */}
       {heroImage ? (
-        <img
-          src={heroImage}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={heroImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
       ) : (
         <div
-          className={`absolute inset-0 bg-zinc-900 flex items-center justify-center${backdropLoading ? ' animate-pulse' : ''}`}
+          className={`absolute inset-0 bg-custom-800 flex items-center justify-center${backdropLoading ? ' animate-pulse' : ''}`}
         >
-          <Film size={80} className="text-zinc-700" />
+          <Film size={80} className="text-custom-700" />
         </div>
       )}
 
@@ -75,9 +71,7 @@ export default function MovieDetailLayout({
           <div className="flex items-center gap-4 mt-4 text-sm text-white/70">{meta}</div>
 
           {/* Plot */}
-          {plot && (
-            <p className="mt-5 text-sm text-white/60 leading-relaxed max-w-lg">{plot}</p>
-          )}
+          {plot && <p className="mt-5 text-sm text-white/60 leading-relaxed max-w-lg">{plot}</p>}
 
           {/* Action buttons */}
           <div className="flex gap-3 mt-8">{actions}</div>

@@ -1,7 +1,7 @@
 import { memo } from 'react'
-import { ArrowUpDown, Filter, X } from 'lucide-react'
+import { ArrowUpDown, Filter, Trash2, Tag } from 'lucide-react'
 import Dropdown, { type Choice } from '../ui/dropdown'
-import { cn } from '../../utils/cn'
+import MultiDropdown from '../ui/multi-dropdown'
 
 // ── Sort ──
 
@@ -68,62 +68,49 @@ export default memo(function LibraryToolbar({
   const hasActiveFilters = activeGenres.length > 0 || statusFilter !== 'all'
 
   return (
-    <div className="flex flex-col gap-3 mt-5">
+    <div className="flex flex-col gap-3 mt-6">
       {/* Row: sort + status + count */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         <Dropdown
           value={sort}
           choices={SORT_CHOICES}
           onChange={onSortChange}
-          icon={<ArrowUpDown size={14} className="text-zinc-400" />}
+          icon={<ArrowUpDown size={14} className="text-custom-400" />}
         />
 
         <Dropdown
           value={statusFilter}
           choices={STATUS_CHOICES}
           onChange={onStatusFilterChange}
-          icon={<Filter size={14} className="text-zinc-400" />}
+          icon={<Filter size={14} className="text-custom-400" />}
         />
+
+        {genres.length > 0 && (
+          <MultiDropdown
+            label="Genre"
+            options={genres}
+            selected={activeGenres}
+            onToggle={onGenreToggle}
+            icon={<Tag size={14} className="text-custom-400" />}
+          />
+        )}
 
         {hasActiveFilters && (
           <button
             onClick={onClearAllFilters}
-            className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors ml-1"
+            className="flex items-center gap-2 text-sm xl:text-base text-custom-500 hover:text-custom-700 dark:text-custom-400 dark:hover:text-custom-200 transition-colors ml-1"
           >
-            <X size={12} />
-            Clear filters
+            <Trash2 size={18} />
+            Clear all
           </button>
         )}
 
         {resultCount !== totalCount && (
-          <span className="text-xs text-zinc-500 ml-auto">
+          <span className="text-xs text-custom-500 ml-auto">
             Showing {resultCount} of {totalCount}
           </span>
         )}
       </div>
-
-      {/* Genre chips */}
-      {genres.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {genres.map((genre) => {
-            const isActive = activeGenres.includes(genre)
-            return (
-              <button
-                key={genre}
-                onClick={() => onGenreToggle(genre)}
-                className={cn(
-                  'px-2.5 py-1 rounded-full text-xs font-medium transition-all border',
-                  isActive
-                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                    : 'bg-zinc-800/60 text-zinc-400 border-zinc-700/60 hover:border-zinc-600 hover:text-zinc-300'
-                )}
-              >
-                {genre}
-              </button>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 })

@@ -5,6 +5,7 @@ import { cn } from '../../utils/cn'
 export interface Choice<T extends string> {
   value: T
   label: string
+  icon?: React.ReactNode
 }
 
 export default function Dropdown<T extends string>({
@@ -16,7 +17,7 @@ export default function Dropdown<T extends string>({
   value: T
   choices: Choice<T>[]
   onChange: (v: T) => void
-  icon: React.ReactNode
+  icon?: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -44,20 +45,31 @@ export default function Dropdown<T extends string>({
         onClick={() => setOpen(!open)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700 hover:border-zinc-600 text-sm text-zinc-300 rounded-lg px-3 py-1.5 transition-colors"
+        className={cn(
+          'flex items-center gap-1.5 rounded-xl px-4.5 py-2 text-sm xl:text-base xl:px-5 xl:py-2.5 font-medium transition-colors',
+          'bg-custom-50 shadow-sm text-custom-700 hover:bg-custom-100',
+          'dark:bg-custom-800 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_0_6px_rgba(0,0,0,0.2)] dark:text-custom-200 dark:hover:bg-custom-700'
+        )}
       >
         {icon}
         <span>{active?.label}</span>
         <ChevronDown
           size={14}
-          className={cn('text-zinc-500 transition-transform', open && 'rotate-180')}
+          className={cn(
+            'text-custom-400 dark:text-custom-500 transition-transform',
+            open && 'rotate-180'
+          )}
         />
       </button>
 
       {open && (
         <div
           role="listbox"
-          className="absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl py-1 z-50 min-w-[170px]"
+          className={cn(
+            'absolute top-full left-0 mt-1.5 rounded-xl shadow-lg p-1.5 xl:p-2 z-50 min-w-[200px] xl:min-w-[230px] flex flex-col gap-1',
+            'bg-custom-50',
+            'dark:bg-custom-800 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_0_10px_rgba(0,0,0,0.2)]'
+          )}
         >
           {choices.map((c) => (
             <button
@@ -69,12 +81,13 @@ export default function Dropdown<T extends string>({
                 setOpen(false)
               }}
               className={cn(
-                'w-full text-left text-sm px-3 py-1.5 transition-colors',
+                'w-full text-left text-sm xl:text-base px-3 py-2 xl:px-3.5 xl:py-2.5 rounded-lg transition-colors flex items-center gap-2.5',
                 c.value === value
-                  ? 'text-blue-400 bg-blue-500/10'
-                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                  ? 'bg-custom-200 text-custom-800 dark:bg-custom-700 dark:text-custom-50'
+                  : 'text-custom-600 hover:bg-custom-100 dark:text-custom-400 dark:hover:bg-custom-700/60'
               )}
             >
+              {c.icon && <span className="text-custom-400 dark:text-custom-500">{c.icon}</span>}
               {c.label}
             </button>
           ))}

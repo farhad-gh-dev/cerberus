@@ -12,6 +12,9 @@ export interface TMDbSearchResult {
   release_date: string
   poster_path: string | null
   overview: string
+  genre_ids: number[]
+  vote_average: number
+  original_language: string
 }
 
 export interface TMDbSearchResponse {
@@ -25,6 +28,7 @@ export interface TMDbMovieDetail {
   id: number
   imdb_id: string | null
   title: string
+  original_language: string
   release_date: string
   runtime: number | null
   genres: { id: number; name: string }[]
@@ -55,9 +59,17 @@ export interface TMDbReleaseDates {
 export interface TMDbTrendingItem {
   id: number
   title: string
+  original_title: string
+  original_language: string
+  overview: string
   release_date: string
   poster_path: string | null
+  backdrop_path: string | null
+  genre_ids: number[]
+  popularity: number
   vote_average: number
+  vote_count: number
+  adult: boolean
 }
 
 export interface TMDbExternalIds {

@@ -19,11 +19,11 @@ export const PeerCard = memo(function PeerCard({ peer, isExpanded, onToggle }: P
   const isActive = peer.downloadSpeed > 0 || peer.uploadSpeed > 0
 
   return (
-    <div className="bg-zinc-900/70 rounded-2xl p-4 border border-zinc-800/40 hover:border-zinc-700/50 transition-colors">
+    <div className="rounded-2xl border border-custom-200 bg-custom-50/60 p-4 transition-colors hover:border-custom-300 dark:border-custom-700/60 dark:bg-custom-800/60 dark:hover:border-custom-700">
       {/* Top row: flag + address + dots */}
       <div className="flex items-center gap-3">
         {/* Country flag avatar */}
-        <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700/50 overflow-hidden">
+        <div className="w-10 h-10 rounded-full bg-custom-200 dark:bg-custom-800 flex items-center justify-center shrink-0 border border-custom-300/60 dark:border-custom-700/50 overflow-hidden">
           {peer.location?.countryCode ? (
             <img
               src={flagUrl(peer.location.countryCode)}
@@ -31,14 +31,16 @@ export const PeerCard = memo(function PeerCard({ peer, isExpanded, onToggle }: P
               className="w-full h-full object-cover"
             />
           ) : (
-            <Globe size={16} className="text-zinc-500" />
+            <Globe size={16} className="text-custom-500 dark:text-custom-400" />
           )}
         </div>
 
         {/* Name + location */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white truncate">{peer.address}</p>
-          <p className="text-[11px] text-zinc-500 truncate">
+          <p className="text-sm font-medium text-custom-800 dark:text-custom-50 truncate">
+            {peer.address}
+          </p>
+          <p className="text-[11px] text-custom-500 dark:text-custom-400 truncate">
             {peer.location
               ? `${peer.location.city}${peer.location.city && peer.location.country ? ', ' : ''}${peer.location.country}`
               : peer.client || 'Unknown location'}
@@ -48,7 +50,7 @@ export const PeerCard = memo(function PeerCard({ peer, isExpanded, onToggle }: P
         {/* More menu */}
         <button
           onClick={() => onToggle(peer.address)}
-          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+          className="w-7 h-7 flex items-center justify-center rounded-full text-custom-500 transition-colors hover:bg-custom-100 hover:text-custom-800 dark:text-custom-400 dark:hover:bg-custom-700 dark:hover:text-custom-100 shrink-0"
         >
           <MoreHorizontal size={14} />
         </button>
@@ -58,21 +60,23 @@ export const PeerCard = memo(function PeerCard({ peer, isExpanded, onToggle }: P
       <div className="flex items-center justify-between mt-5">
         <span
           className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${
-            isActive ? 'bg-green-500/20 text-green-400' : 'bg-zinc-800 text-zinc-500'
+            isActive
+              ? 'bg-green-500/15 text-green-600 dark:bg-green-500/20 dark:text-green-400'
+              : 'bg-custom-200 text-custom-500 dark:bg-custom-800 dark:text-custom-400'
           }`}
         >
           {isActive ? 'Active' : 'Idle'}
         </span>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-[10px] text-zinc-500">Down</p>
-            <p className="text-sm font-semibold text-white">
+            <p className="text-[10px] text-custom-500 dark:text-custom-400">Down</p>
+            <p className="text-sm font-semibold text-custom-800 dark:text-custom-50">
               {peer.downloadSpeed > 0 ? formatSpeed(peer.downloadSpeed) : '--'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-zinc-500">Up</p>
-            <p className="text-sm font-semibold text-white">
+            <p className="text-[10px] text-custom-500 dark:text-custom-400">Up</p>
+            <p className="text-sm font-semibold text-custom-800 dark:text-custom-50">
               {peer.uploadSpeed > 0 ? formatSpeed(peer.uploadSpeed) : '--'}
             </p>
           </div>
@@ -81,32 +85,38 @@ export const PeerCard = memo(function PeerCard({ peer, isExpanded, onToggle }: P
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-zinc-800/50 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] overflow-hidden">
+        <div className="mt-3 pt-3 border-t border-custom-200 dark:border-custom-700/50 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] overflow-hidden">
           <div className="min-w-0">
-            <span className="text-zinc-600">Port: </span>
-            <span className="text-zinc-400">{peer.port}</span>
+            <span className="text-custom-500 dark:text-custom-500">Port: </span>
+            <span className="text-custom-700 dark:text-custom-300">{peer.port}</span>
           </div>
           <div className="min-w-0">
-            <span className="text-zinc-600">Client: </span>
-            <span className="text-zinc-400 break-all">{peer.client}</span>
+            <span className="text-custom-500 dark:text-custom-500">Client: </span>
+            <span className="text-custom-700 dark:text-custom-300 break-all">{peer.client}</span>
           </div>
           <div className="min-w-0">
-            <span className="text-zinc-600">Downloaded: </span>
-            <span className="text-zinc-400">{formatBytes(peer.downloaded)}</span>
+            <span className="text-custom-500 dark:text-custom-500">Downloaded: </span>
+            <span className="text-custom-700 dark:text-custom-300">
+              {formatBytes(peer.downloaded)}
+            </span>
           </div>
           <div className="min-w-0">
-            <span className="text-zinc-600">Uploaded: </span>
-            <span className="text-zinc-400">{formatBytes(peer.uploaded)}</span>
+            <span className="text-custom-500 dark:text-custom-500">Uploaded: </span>
+            <span className="text-custom-700 dark:text-custom-300">
+              {formatBytes(peer.uploaded)}
+            </span>
           </div>
           {peer.location && (
             <>
               <div className="min-w-0">
-                <span className="text-zinc-600">ISP: </span>
-                <span className="text-zinc-400 break-all">{peer.location.isp}</span>
+                <span className="text-custom-500 dark:text-custom-500">ISP: </span>
+                <span className="text-custom-700 dark:text-custom-300 break-all">
+                  {peer.location.isp}
+                </span>
               </div>
               <div className="min-w-0">
-                <span className="text-zinc-600">Coords: </span>
-                <span className="text-zinc-400">
+                <span className="text-custom-500 dark:text-custom-500">Coords: </span>
+                <span className="text-custom-700 dark:text-custom-300">
                   {peer.location.lat.toFixed(2)}, {peer.location.lon.toFixed(2)}
                 </span>
               </div>
@@ -129,18 +139,19 @@ export const PeerList = memo(function PeerList({
   selectedPeer,
   onTogglePeer
 }: PeerListProps) {
+  // Hide idle handshake-only peers; sort the rest by total bandwidth.
   const sortedPeers = useMemo(
     () =>
-      [...peers].sort(
-        (a, b) => b.downloadSpeed + b.uploadSpeed - (a.downloadSpeed + a.uploadSpeed)
-      ),
+      peers
+        .filter((p) => p.downloadSpeed > 0 || p.uploadSpeed > 0)
+        .sort((a, b) => b.downloadSpeed + b.uploadSpeed - (a.downloadSpeed + a.uploadSpeed)),
     [peers]
   )
 
-  if (peers.length === 0) {
+  if (sortedPeers.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div className="flex flex-col items-center justify-center h-full text-zinc-600">
+        <div className="flex flex-col items-center justify-center h-full text-custom-500 dark:text-custom-500">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -168,7 +179,7 @@ export const PeerList = memo(function PeerList({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+    <div className="flex-1 overflow-y-auto px-1 py-3 space-y-3">
       {sortedPeers.map((peer) => (
         <PeerCard
           key={peer.id}

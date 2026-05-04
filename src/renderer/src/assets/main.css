@@ -1,4 +1,18 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-custom-50: #f8f9fa;
+  --color-custom-100: #e9ecef;
+  --color-custom-200: #dee2e6;
+  --color-custom-300: #ced4da;
+  --color-custom-400: #adb5bd;
+  --color-custom-500: #6c757d;
+  --color-custom-600: #495057;
+  --color-custom-700: #343a40;
+  --color-custom-800: #212529;
+  --color-custom-900: #0a0a0a;
+}
 
 /* Custom scrollbar styling */
 * {

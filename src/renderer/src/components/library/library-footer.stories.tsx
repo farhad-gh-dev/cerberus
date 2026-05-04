@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import LibraryFooter from './library-footer'
 
 const meta: Meta<typeof LibraryFooter> = {
-  title: 'Components/LibraryFooter',
+  title: 'Components/Library/LibraryFooter',
   component: LibraryFooter,
   argTypes: {
     onPickVideo: { action: 'pickVideo' }

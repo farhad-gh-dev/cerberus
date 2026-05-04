@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import LoadingSpinner from './loading-spinner'
+import PageLoader from './loading-spinner'
 
-const meta: Meta<typeof LoadingSpinner> = {
-  title: 'Components/LoadingSpinner',
-  component: LoadingSpinner
+const meta: Meta<typeof PageLoader> = {
+  title: 'Components/PageLoader',
+  component: PageLoader
 }
 
 export default meta
-type Story = StoryObj<typeof LoadingSpinner>
+type Story = StoryObj<typeof PageLoader>
 
 export const Default: Story = {}
 

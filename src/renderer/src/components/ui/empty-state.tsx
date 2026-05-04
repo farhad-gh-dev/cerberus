@@ -8,9 +8,17 @@ interface EmptyStateProps {
   className?: string
 }
 
-export default function EmptyState({ icon, title, subtitle, action, className = '' }: EmptyStateProps) {
+export default function EmptyState({
+  icon,
+  title,
+  subtitle,
+  action,
+  className = ''
+}: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center text-zinc-600 ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center text-custom-500 dark:text-custom-400 ${className}`}
+    >
       <div className="mb-3">{icon}</div>
       <p className="text-lg">{title}</p>
       {subtitle && <p className="text-sm mt-1">{subtitle}</p>}

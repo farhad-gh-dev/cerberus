@@ -19,9 +19,18 @@ const preview: Preview = {
     }
   },
   initialGlobals: {
-    // 👇 Set the initial background color
     backgrounds: { value: 'dark' }
-  }
+  },
+  decorators: [
+    (Story, context) => {
+      const bg = context.globals.backgrounds?.value ?? 'dark'
+      const isDark = bg === 'dark'
+      const root = document.documentElement
+      root.classList.toggle('dark', isDark)
+      document.body.style.backgroundColor = isDark ? '#0a0a0a' : '#e9ecef'
+      return Story()
+    }
+  ]
 }
 
 export default preview

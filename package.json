@@ -1,6 +1,6 @@
 {
   "name": "cerberus",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -28,6 +28,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.5",
     "cobe": "^0.6.5",
+    "electron-updater": "^6.8.3",
     "extract-zip": "^2.0.1",
     "lucide-react": "^0.563.0",
     "react-router-dom": "^7.13.0",

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '/^[A-Z]:/ {f=$0} /explicit-function-return-type/ {print f; print $0}')",
+      "Bash(git stash *)",
+      "Read(//c/Users/Farhad/.claude/projects/c--Users-Farhad-Desktop-projects-cerberus/memory/**)",
+      "Bash(node -e \"const p = require\\('parse-torrent'\\); console.log\\(typeof p\\)\")"
+    ]
+  }
+}

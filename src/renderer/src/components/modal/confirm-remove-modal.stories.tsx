@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import ConfirmRemoveModal from './confirm-remove-modal'
 
 const meta: Meta<typeof ConfirmRemoveModal> = {
-  title: 'Components/ConfirmRemoveModal',
+  title: 'Components/Modal/ConfirmRemoveModal',
   component: ConfirmRemoveModal,
   argTypes: {
     onConfirm: { action: 'confirm' },

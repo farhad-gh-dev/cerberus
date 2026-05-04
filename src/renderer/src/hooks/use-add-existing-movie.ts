@@ -1,4 +1,4 @@
-import { useState, useCallback, type FormEvent } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { MovieSearchItem, LibraryMovie } from '@shared/types'
 import { useAsyncAction } from './use-async-action'
 
@@ -10,6 +10,7 @@ interface AddExistingMovieState {
   results: MovieSearchItem[]
   searching: boolean
   searchError: string | null
+  selectedMovie: MovieSearchItem | null
   /** The TMDB id of the movie currently being added, or null if idle */
   addingId: number | null
   /** True when no async operation is in progress */
@@ -17,10 +18,12 @@ interface AddExistingMovieState {
 }
 
 interface AddExistingMovieActions {
-  setQuery: (query: string) => void
+  handleQueryChange: (query: string) => void
   pickFile: () => Promise<void>
-  search: (e: FormEvent) => Promise<void>
-  addMovie: (item: MovieSearchItem) => Promise<void>
+  clearFile: () => void
+  clearSelectedMovie: () => void
+  selectMovie: (item: MovieSearchItem) => void
+  submitMovie: () => Promise<void>
 }
 
 export type UseAddExistingMovieReturn = AddExistingMovieState & AddExistingMovieActions
@@ -45,6 +48,7 @@ export function useAddExistingMovie(
   const [results, setResults] = useState<MovieSearchItem[]>([])
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [selectedMovie, setSelectedMovie] = useState<MovieSearchItem | null>(null)
   const [addingId, setAddingId] = useState<number | null>(null)
 
   const run = useAsyncAction()
@@ -54,76 +58,120 @@ export function useAddExistingMovie(
     if (picked) setFilePath(picked)
   }, [])
 
-  const search = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault()
-      const trimmed = query.trim()
-      if (!trimmed) return
+  const clearFile = useCallback(() => {
+    setFilePath(null)
+    setQuery('')
+    setResults([])
+    setSearchError(null)
+    setSelectedMovie(null)
+  }, [])
 
+  const clearSelectedMovie = useCallback(() => {
+    setSelectedMovie(null)
+    setQuery('')
+    setResults([])
+    setSearchError(null)
+  }, [])
+
+  const handleQueryChange = useCallback((value: string) => {
+    setQuery(value)
+    setSelectedMovie(null)
+    setSearchError(null)
+  }, [])
+
+  const selectMovie = useCallback((item: MovieSearchItem) => {
+    setSelectedMovie(item)
+    setQuery(item.title + (item.year ? ` (${item.year})` : ''))
+    setResults([])
+    setSearchError(null)
+  }, [])
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (selectedMovie) return
+
+    const trimmed = query.trim()
+    if (!trimmed) {
+      setResults([])
+      setSearchError(null)
+      return
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    let cancelled = false
+
+    debounceRef.current = setTimeout(async () => {
       setSearching(true)
       setSearchError(null)
-      setResults([])
 
       try {
         const res = await window.api.movies.search(trimmed)
+        if (cancelled) return
         if (res.results.length > 0) {
           setResults(res.results)
         } else {
           setSearchError('No results found')
         }
       } catch {
-        setSearchError('Search failed. Check your connection.')
+        if (!cancelled) setSearchError('Search failed. Check your connection.')
       } finally {
-        setSearching(false)
+        if (!cancelled) setSearching(false)
       }
-    },
-    [query]
-  )
+    }, 400)
 
-  const addMovie = useCallback(
-    async (item: MovieSearchItem) => {
-      if (!filePath) return
-      setAddingId(item.id)
-      try {
-        await run(
-          async () => {
-            const details = await window.api.movies.details(item.id)
-            if (!details) throw new Error('Failed to load movie details')
-            return window.api.library.add({
-              imdbId: details.imdbId,
-              title: details.title,
-              year: details.year,
-              posterUrl: details.posterUrl,
-              plot: details.plot,
-              genre: details.genre,
-              director: details.director,
-              actors: details.actors,
-              imdbRating: details.rating,
-              runtime: details.runtime,
-              filePath
-            })
-          },
-          'Failed to add movie',
-          { onSuccess: onAdded }
-        )
-      } finally {
-        setAddingId(null)
-      }
-    },
-    [filePath, run, onAdded]
-  )
+    return () => {
+      cancelled = true
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [query, selectedMovie])
+
+  const submitMovie = useCallback(async () => {
+    if (!filePath || !selectedMovie) return
+    setAddingId(selectedMovie.id)
+    try {
+      await run(
+        async () => {
+          const details = await window.api.movies.details(selectedMovie.id)
+          if (!details) throw new Error('Failed to load movie details')
+          return window.api.library.add({
+            imdbId: details.imdbId,
+            title: details.title,
+            year: details.year,
+            posterUrl: details.posterUrl,
+            plot: details.plot,
+            genre: details.genre,
+            director: details.director,
+            actors: details.actors,
+            imdbRating: details.rating,
+            runtime: details.runtime,
+            language: details.language,
+            filePath
+          })
+        },
+        'Failed to add movie',
+        { onSuccess: onAdded }
+      )
+    } finally {
+      setAddingId(null)
+    }
+  }, [filePath, selectedMovie, run, onAdded])
 
   return {
     filePath,
     query,
-    setQuery,
     results,
     searching,
     searchError,
+    selectedMovie,
     addingId,
     isIdle: addingId === null && !searching,
     pickFile,
-    search,
-    addMovie
+    clearFile,
+    clearSelectedMovie,
+    handleQueryChange,
+    selectMovie,
+    submitMovie
   }
 }

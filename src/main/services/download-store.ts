@@ -1,7 +1,8 @@
 import { app } from 'electron'
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import type { DownloadItem } from '../../shared/types'
+import { createJsonWriter } from './json-writer'
 
 // ---------- Types ----------
 
@@ -30,6 +31,14 @@ interface DownloadStore {
 const STORE_FILE = join(app.getPath('userData'), 'downloads.json')
 
 let store: DownloadStore | null = null
+// id → records[] index; rebuild after any reorder/remove.
+const idIndex = new Map<string, number>()
+const writer = createJsonWriter<DownloadStore>(STORE_FILE)
+
+function rebuildIndex(records: DownloadRecord[]): void {
+  idIndex.clear()
+  for (let i = 0; i < records.length; i++) idIndex.set(records[i].id, i)
+}
 
 // ---------- Public API ----------
 
@@ -44,19 +53,29 @@ export function loadStore(): DownloadStore {
   } else {
     store = { records: [] }
   }
+  rebuildIndex(store!.records)
   return store!
 }
 
 export function saveStore(): void {
-  writeFileSync(STORE_FILE, JSON.stringify(loadStore(), null, 2))
+  writer.schedule(loadStore())
+}
+
+export function flushStoreSync(): void {
+  writer.flushSync()
 }
 
 export function upsertRecord(id: string, update: Partial<DownloadRecord>): void {
   const s = loadStore()
-  const idx = s.records.findIndex((r) => r.id === id)
-  if (idx !== -1) {
-    s.records[idx] = { ...s.records[idx], ...update }
+  const at = idIndex.get(id)
+  if (at !== undefined) {
+    s.records[at] = { ...s.records[at], ...update }
   } else {
+    if (!update.id || !update.name || !update.magnetLink || !update.savePath) {
+      console.error('[download-store] insert missing required fields for', id, update)
+      return
+    }
+    idIndex.set(id, s.records.length)
     s.records.push(update as DownloadRecord)
   }
   saveStore()
@@ -64,12 +83,16 @@ export function upsertRecord(id: string, update: Partial<DownloadRecord>): void 
 
 export function removeRecord(id: string): void {
   const s = loadStore()
+  if (!idIndex.has(id)) return
   s.records = s.records.filter((r) => r.id !== id)
+  rebuildIndex(s.records)
   saveStore()
 }
 
 export function getRecord(id: string): DownloadRecord | undefined {
-  return loadStore().records.find((r) => r.id === id)
+  const s = loadStore()
+  const at = idIndex.get(id)
+  return at !== undefined ? s.records[at] : undefined
 }
 
 export function getAllRecords(): DownloadRecord[] {
@@ -94,9 +117,11 @@ export function getQueuedRecords(): DownloadRecord[] {
 /** Swap the priority of two records. */
 export function swapPriority(idA: string, idB: string): void {
   const s = loadStore()
-  const a = s.records.find((r) => r.id === idA)
-  const b = s.records.find((r) => r.id === idB)
-  if (!a || !b) return
+  const ai = idIndex.get(idA)
+  const bi = idIndex.get(idB)
+  if (ai === undefined || bi === undefined) return
+  const a = s.records[ai]
+  const b = s.records[bi]
   const tmp = a.priority
   a.priority = b.priority
   b.priority = tmp
@@ -107,8 +132,10 @@ export function swapPriority(idA: string, idB: string): void {
 export function reorderQueueRecords(orderedIds: string[]): void {
   const s = loadStore()
   for (let i = 0; i < orderedIds.length; i++) {
-    const record = s.records.find((r) => r.id === orderedIds[i])
-    if (record && record.status === 'queued') {
+    const at = idIndex.get(orderedIds[i])
+    if (at === undefined) continue
+    const record = s.records[at]
+    if (record.status === 'queued') {
       record.priority = i
     }
   }

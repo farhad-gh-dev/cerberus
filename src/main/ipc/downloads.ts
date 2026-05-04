@@ -1,14 +1,17 @@
 import { ipcMain } from 'electron'
-import { startDownload, getDownloads, getPeers } from '../services/download-manager'
 import {
+  startDownload,
   pauseDownload,
   resumeDownload,
   cancelDownload,
   deleteDownload,
   holdDownload,
-  unholdDownload
-} from '../services/download-actions'
-import { moveInQueue, reorderQueue } from '../services/download-queue'
+  unholdDownload,
+  moveInQueue,
+  reorderQueue,
+  getDownloads,
+  getPeers
+} from '../services/torrent/engine'
 
 export function registerDownloadHandlers(): void {
   ipcMain.handle(
@@ -22,43 +25,19 @@ export function registerDownloadHandlers(): void {
     return startDownload(magnetLink, name, undefined, undefined, true)
   })
 
-  ipcMain.handle('download:pause', async (_event, id: string) => {
-    return pauseDownload(id)
-  })
+  ipcMain.handle('download:pause', async (_event, id: string) => pauseDownload(id))
+  ipcMain.handle('download:resume', async (_event, id: string) => resumeDownload(id))
+  ipcMain.handle('download:cancel', async (_event, id: string) => cancelDownload(id))
+  ipcMain.handle('download:delete', async (_event, id: string) => deleteDownload(id))
+  ipcMain.handle('download:list', async () => getDownloads())
+  ipcMain.handle('download:peers', async (_event, id: string) => getPeers(id))
 
-  ipcMain.handle('download:resume', async (_event, id: string) => {
-    return resumeDownload(id)
-  })
-
-  ipcMain.handle('download:cancel', async (_event, id: string) => {
-    return cancelDownload(id)
-  })
-
-  ipcMain.handle('download:delete', async (_event, id: string) => {
-    return deleteDownload(id)
-  })
-
-  ipcMain.handle('download:list', async () => {
-    return getDownloads()
-  })
-
-  ipcMain.handle('download:peers', async (_event, id: string) => {
-    return getPeers(id)
-  })
-
-  ipcMain.handle('download:move-in-queue', async (_event, id: string, direction: 'up' | 'down') => {
-    return moveInQueue(id, direction)
-  })
-
-  ipcMain.handle('download:reorder-queue', async (_event, orderedIds: string[]) => {
-    return reorderQueue(orderedIds)
-  })
-
-  ipcMain.handle('download:hold', async (_event, id: string) => {
-    return holdDownload(id)
-  })
-
-  ipcMain.handle('download:unhold', async (_event, id: string) => {
-    return unholdDownload(id)
-  })
+  ipcMain.handle('download:move-in-queue', async (_event, id: string, direction: 'up' | 'down') =>
+    moveInQueue(id, direction)
+  )
+  ipcMain.handle('download:reorder-queue', async (_event, orderedIds: string[]) =>
+    reorderQueue(orderedIds)
+  )
+  ipcMain.handle('download:hold', async (_event, id: string) => holdDownload(id))
+  ipcMain.handle('download:unhold', async (_event, id: string) => unholdDownload(id))
 }

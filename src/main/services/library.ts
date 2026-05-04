@@ -122,21 +122,49 @@ export function resolveVideoFile(
   return largestVideo(allVideos)
 }
 
+function externalPlayerCommand(): string | null {
+  if (!getSetting('externalPlayerEnabled')) return null
+  const path = getSetting('externalPlayerPath')
+  return path || null
+}
+
 export function openInPlayer(filePath: string): Promise<string> | string {
-  const external = getSetting('externalPlayerPath')
+  const external = externalPlayerCommand()
   if (external) {
     try {
       const child = spawn(external, [filePath], { detached: true, stdio: 'ignore' })
+      child.on('error', (err) => console.warn('[library] external player spawn error:', err))
       try {
         child.unref()
-      } catch {}
+      } catch {
+        // ignore: unref is best-effort
+      }
       return ''
-    } catch {
-      // fallback to default
+    } catch (err) {
+      console.warn('[library] external player spawn failed, falling back:', err)
       return shell.openPath(filePath)
     }
   }
   return shell.openPath(filePath)
+}
+
+/** Launch the configured external player against a URL. False = caller should fall back. */
+export function spawnExternalPlayer(url: string): boolean {
+  const external = externalPlayerCommand()
+  if (!external) return false
+  try {
+    const child = spawn(external, [url], { detached: true, stdio: 'ignore' })
+    child.on('error', (err) => console.warn('[library] external player spawn error:', err))
+    try {
+      child.unref()
+    } catch {
+      // ignore: unref is best-effort
+    }
+    return true
+  } catch (err) {
+    console.warn('[library] external player spawn failed:', err)
+    return false
+  }
 }
 
 export async function pickVideoDialog(): Promise<string | null> {
@@ -221,6 +249,7 @@ export async function addCompletedMovieToLibrary(
       actors: details.actors,
       imdbRating: details.rating,
       runtime: details.runtime,
+      language: details.language,
       filePath: torrentPath
     })
   } catch (err) {

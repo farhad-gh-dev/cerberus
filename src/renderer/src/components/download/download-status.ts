@@ -17,7 +17,7 @@ export const statusColor: Record<DownloadStatus, string> = {
   paused: 'text-yellow-400',
   completed: 'text-green-400',
   error: 'text-red-400',
-  queued: 'text-zinc-400',
+  queued: 'text-custom-400',
   'on-hold': 'text-orange-400'
 }
 
@@ -27,10 +27,10 @@ export const statusIcon: Partial<Record<DownloadStatus, typeof Clock>> = {
 }
 
 export const barColor: Record<DownloadStatus, string> = {
-  completed: 'bg-green-500',
+  completed: 'bg-custom-800 dark:bg-custom-50',
   'on-hold': 'bg-orange-500/60',
-  queued: 'bg-zinc-500',
-  downloading: 'bg-blue-500',
+  queued: 'bg-custom-500',
+  downloading: 'bg-custom-800 dark:bg-custom-50',
   paused: 'bg-blue-500',
   error: ''
 }

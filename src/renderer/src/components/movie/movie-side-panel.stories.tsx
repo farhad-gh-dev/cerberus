@@ -33,7 +33,8 @@ const movie: MovieDetail = {
   backdropUrl: '',
   rating: '8.8',
   votes: '2,300,000',
-  boxOffice: '$292,576,195'
+  boxOffice: '$292,576,195',
+  language: 'English'
 }
 
 export const Default: Story = {

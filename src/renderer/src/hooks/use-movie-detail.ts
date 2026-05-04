@@ -130,7 +130,8 @@ export function useMovieDetail({
             director: movie.director,
             actors: movie.actors,
             imdbRating: movie.rating,
-            runtime: movie.runtime
+            runtime: movie.runtime,
+            language: movie.language
           }),
         'Failed to add to library'
       )

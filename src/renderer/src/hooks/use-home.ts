@@ -1,11 +1,19 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { MovieSearchItem, TrendingMovie, LibraryMovie } from '@shared/types'
-import type { MovieCardStatus } from '../components/movie-card'
+
 import { useSettingsStore } from '../stores/settings'
 
-const MAX_TRENDING_PAGES = 5
+const MAX_PAGES = 5
+
+export interface MovieEnrichment {
+  imdbId: string | null
+  runtime: string
+  hasTorrents: boolean
+}
 
 // ── Types ────────────────────────────────────────────────────────────────
+
+export type MovieCategory = 'trending' | 'popular' | 'top-rated'
 
 /** Identifies the movie currently open in the detail modal. */
 export interface SelectedMovie {
@@ -13,22 +21,29 @@ export interface SelectedMovie {
   imdbId?: string
 }
 
+export interface EnrichedSearchItem extends MovieSearchItem {
+  enrichment: MovieEnrichment
+}
+
 /** Grouped search state — updated atomically to avoid intermediate inconsistencies. */
 interface SearchState {
-  results: MovieSearchItem[]
+  results: EnrichedSearchItem[]
   searched: boolean
   loading: boolean
   error: string | null
 }
 
-/** Grouped trending state. */
-interface TrendingState {
-  movies: TrendingMovie[]
+interface CategoryState {
+  movies: EnrichedMovie[]
   loading: boolean
   loadingMore: boolean
   error: boolean
   page: number
   hasMore: boolean
+}
+
+export interface EnrichedMovie extends TrendingMovie {
+  enrichment: MovieEnrichment
 }
 
 const INITIAL_SEARCH: SearchState = {
@@ -38,21 +53,60 @@ const INITIAL_SEARCH: SearchState = {
   error: null
 }
 
+const INITIAL_CATEGORY: CategoryState = {
+  movies: [],
+  loading: true,
+  loadingMore: false,
+  error: false,
+  page: 1,
+  hasMore: true
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+const categoryFetcher: Record<MovieCategory, (page?: number) => Promise<TrendingMovie[]>> = {
+  trending: (page) => window.api.tmdb.trending(page),
+  popular: (page) => window.api.tmdb.popular(page),
+  'top-rated': (page) => window.api.tmdb.topRated(page)
+}
+
+// Drops rejections too — without confirmed torrent availability, showing the
+// movie reintroduces the flicker.
+async function enrichAndFilter(movies: TrendingMovie[]): Promise<EnrichedMovie[]> {
+  const results = await Promise.allSettled(
+    movies.map((m) => window.api.tmdb.enrich(m.tmdbId, m.title))
+  )
+  const out: EnrichedMovie[] = []
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value.hasTorrents) {
+      out.push({ ...movies[i], enrichment: r.value })
+    }
+  })
+  return out
+}
+
+async function enrichAndFilterSearch(items: MovieSearchItem[]): Promise<EnrichedSearchItem[]> {
+  const results = await Promise.allSettled(items.map((m) => window.api.tmdb.enrich(m.id, m.title)))
+  const out: EnrichedSearchItem[] = []
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value.hasTorrents) {
+      out.push({ ...items[i], enrichment: r.value })
+    }
+  })
+  return out
+}
+
 // ── Hook ─────────────────────────────────────────────────────────────────
 
 export function useHome() {
   const [search, setSearch] = useState<SearchState>(INITIAL_SEARCH)
-  const [trending, setTrending] = useState<TrendingState>({
-    movies: [],
-    loading: true,
-    loadingMore: false,
-    error: false,
-    page: 1,
-    hasMore: true
-  })
+  const [category, setCategory] = useState<MovieCategory>('trending')
+  const [categoryState, setCategoryState] = useState<CategoryState>(INITIAL_CATEGORY)
   const loadingMoreRef = useRef(false)
-  const trendingRef = useRef(trending)
-  trendingRef.current = trending
+  const categoryStateRef = useRef(categoryState)
+  categoryStateRef.current = categoryState
+  const categoryRef = useRef(category)
+  categoryRef.current = category
   const [libraryMovies, setLibraryMovies] = useState<LibraryMovie[]>([])
   const [selectedMovie, setSelectedMovie] = useState<SelectedMovie | null>(null)
 
@@ -68,50 +122,67 @@ export function useHome() {
       .catch(() => setLibraryMovies([]))
   }, [])
 
-  useEffect(() => {
-    window.api.tmdb
-      .trending(1)
-      .then((movies) =>
-        setTrending({
-          movies,
-          loading: false,
-          loadingMore: false,
-          error: false,
-          page: 1,
-          hasMore: movies.length > 0 && 1 < MAX_TRENDING_PAGES
-        })
-      )
-      .catch(() =>
-        setTrending({
-          movies: [],
-          loading: false,
-          loadingMore: false,
-          error: true,
-          page: 1,
-          hasMore: false
-        })
-      )
-    loadLibrary()
-    loadSettings()
-  }, [loadLibrary, loadSettings])
-
-  const loadMoreTrending = useCallback(async () => {
-    if (loadingMoreRef.current) return
-    loadingMoreRef.current = true
-    setTrending((prev) => ({ ...prev, loadingMore: true }))
+  const fetchCategory = useCallback(async (cat: MovieCategory) => {
+    setCategoryState(INITIAL_CATEGORY)
+    loadingMoreRef.current = false
 
     try {
-      const nextPage = trendingRef.current.page + 1
-      const movies = await window.api.tmdb.trending(nextPage)
-      setTrending((prev) => ({
+      const raw = await categoryFetcher[cat](1)
+      const enriched = await enrichAndFilter(raw)
+      if (categoryRef.current !== cat) return
+      setCategoryState({
+        movies: enriched,
+        loading: false,
+        loadingMore: false,
+        error: false,
+        page: 1,
+        hasMore: raw.length > 0 && 1 < MAX_PAGES
+      })
+    } catch {
+      if (categoryRef.current !== cat) return
+      setCategoryState({
+        movies: [],
+        loading: false,
+        loadingMore: false,
+        error: true,
+        page: 1,
+        hasMore: false
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchCategory(category)
+    loadLibrary()
+    loadSettings()
+  }, [loadLibrary, loadSettings, fetchCategory, category])
+
+  const changeCategory = useCallback((cat: MovieCategory) => {
+    if (cat === categoryRef.current) return
+    setCategory(cat)
+  }, [])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current) return
+    loadingMoreRef.current = true
+    setCategoryState((prev) => ({ ...prev, loadingMore: true }))
+
+    const startCategory = categoryRef.current
+    try {
+      const nextPage = categoryStateRef.current.page + 1
+      const raw = await categoryFetcher[startCategory](nextPage)
+      const enriched = await enrichAndFilter(raw)
+      if (categoryRef.current !== startCategory) return
+      setCategoryState((prev) => ({
         ...prev,
-        movies: [...prev.movies, ...movies],
+        movies: [...prev.movies, ...enriched],
         loadingMore: false,
         page: nextPage,
-        hasMore: movies.length > 0 && nextPage < MAX_TRENDING_PAGES
+        hasMore: raw.length > 0 && nextPage < MAX_PAGES
       }))
     } catch {
-      setTrending((prev) => ({ ...prev, loadingMore: false, hasMore: false }))
+      if (categoryRef.current !== startCategory) return
+      setCategoryState((prev) => ({ ...prev, loadingMore: false, hasMore: false }))
     } finally {
       loadingMoreRef.current = false
     }
@@ -125,14 +196,24 @@ export function useHome() {
     [libraryMovies]
   )
 
-  const getCardStatus = useCallback(
-    (imdbId: string | null | undefined): MovieCardStatus => {
-      if (!imdbId) return 'none'
-      const lib = libraryByImdbId.get(imdbId)
-      if (!lib) return 'none'
-      return lib.filePath ? 'downloaded' : 'in-library'
+  const libraryByTitleYear = useMemo(
+    () => new Map(libraryMovies.map((m) => [`${m.title.toLowerCase()}|${m.year}`, m])),
+    [libraryMovies]
+  )
+
+  const getLibraryEntry = useCallback(
+    (imdbId: string | null | undefined) => {
+      if (!imdbId) return undefined
+      return libraryByImdbId.get(imdbId)
     },
     [libraryByImdbId]
+  )
+
+  const getLibraryEntryByTitleYear = useCallback(
+    (title: string, year: string) => {
+      return libraryByTitleYear.get(`${title.toLowerCase()}|${year}`)
+    },
+    [libraryByTitleYear]
   )
 
   // ── Search handlers ─────────────────────────────────────────────────
@@ -141,11 +222,12 @@ export function useHome() {
     setSearch({ results: [], searched: true, loading: true, error: null })
     try {
       const res = await window.api.movies.search(query)
+      const enriched = await enrichAndFilterSearch(res.results)
       setSearch({
-        results: res.results,
+        results: enriched,
         searched: true,
         loading: false,
-        error: res.results.length === 0 ? 'No results found' : null
+        error: enriched.length === 0 ? 'No results found' : null
       })
     } catch {
       setSearch({
@@ -174,14 +256,17 @@ export function useHome() {
 
   return {
     search,
-    trending,
+    category,
+    categoryState,
     selectedMovie,
     hasApiKey,
-    getCardStatus,
+    getLibraryEntry,
+    getLibraryEntryByTitleYear,
+    changeCategory,
     handleSearch,
     handleReset,
     selectMovie,
     clearSelection,
-    loadMoreTrending
+    loadMore
   } as const
 }

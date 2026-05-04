@@ -23,6 +23,9 @@ export function useVideoControls({
 
   const [showControls, setShowControls] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [locked, setLocked] = useState(false)
+
+  const toggleLock = useCallback(() => setLocked((v) => !v), [])
 
   // Auto-hide controls
   const resetControlsTimer = useCallback(() => {
@@ -71,6 +74,8 @@ export function useVideoControls({
     containerRef,
     showControls,
     isFullscreen,
+    locked,
+    toggleLock,
     toggleFullscreen,
     togglePip,
     resetControlsTimer

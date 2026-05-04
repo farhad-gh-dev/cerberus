@@ -1,6 +1,6 @@
 import type WebTorrent from 'webtorrent'
 import type { PeerInfo } from '../../shared/types'
-import { geolocateIp } from './geolocation'
+import { geolocateBatch } from './geolocation'
 import { safeNum } from './download-helpers'
 
 export async function getPeers(
@@ -10,11 +10,17 @@ export async function getPeers(
   if (!torrent) return []
 
   const wires = torrent.wires || []
+  if (wires.length === 0) return []
 
-  const geoPromises = wires.map(async (wire, i) => {
-    const address = wire.remoteAddress || ''
+  // One deduped batched lookup, instead of one Promise per wire per poll.
+  const addresses = wires.map((w) => w.remoteAddress || '')
+  const uniqueAddrs = Array.from(new Set(addresses.filter(Boolean)))
+  const locations = uniqueAddrs.length > 0 ? await geolocateBatch(uniqueAddrs) : null
+
+  return wires.map((wire, i) => {
+    const address = addresses[i]
     const port = wire.remotePort || 0
-    const location = address ? await geolocateIp(address) : null
+    const location = address && locations ? (locations.get(address) ?? null) : null
 
     return {
       id: `${address}:${port}-${i}`,
@@ -34,8 +40,6 @@ export async function getPeers(
       location: location || undefined
     } satisfies PeerInfo
   })
-
-  return Promise.all(geoPromises)
 }
 
 /** Count the number of set bits in a byte. */

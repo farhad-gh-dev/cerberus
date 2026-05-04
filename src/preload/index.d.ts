@@ -9,7 +9,8 @@ import type {
   LibraryMovie,
   AppSettings,
   SubtitleTrack,
-  OnlineSubtitleResult
+  OnlineSubtitleResult,
+  UpdaterStatus
 } from '../shared/types'
 
 declare global {
@@ -28,6 +29,12 @@ declare global {
       tmdb: {
         backdrop: (imdbId: string) => Promise<{ backdrop: string | null; poster: string | null }>
         trending: (page?: number) => Promise<TrendingMovie[]>
+        popular: (page?: number) => Promise<TrendingMovie[]>
+        topRated: (page?: number) => Promise<TrendingMovie[]>
+        enrich: (
+          tmdbId: number,
+          title: string
+        ) => Promise<{ imdbId: string | null; runtime: string; hasTorrents: boolean }>
       }
       torrent: {
         search: (query: string, imdbId?: string) => Promise<TorrentResult[]>
@@ -78,6 +85,13 @@ declare global {
         pickFolder: () => Promise<string | null>
         pickPlayer: () => Promise<string | null>
       }
+      updater: {
+        status: () => Promise<UpdaterStatus>
+        check: () => Promise<UpdaterStatus>
+        download: () => Promise<UpdaterStatus>
+        install: () => Promise<boolean>
+        onStatus: (callback: (status: UpdaterStatus) => void) => () => void
+      }
       stream: {
         start: (magnetLink: string) => Promise<{ id: string; fileName: string }>
         stop: (id: string) => Promise<boolean>
@@ -93,6 +107,9 @@ declare global {
         } | null>
         seek: (id: string, byteOffset: number) => Promise<boolean>
         filePath: (id: string) => Promise<string | null>
+        openExternal: (
+          id: string
+        ) => Promise<{ ok: true; url: string } | { ok: false; error: string }>
       }
     }
   }

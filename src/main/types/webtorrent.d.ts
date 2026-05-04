@@ -11,6 +11,8 @@ declare module 'webtorrent' {
     ): WebTorrent.Torrent
     get(torrentId: string): WebTorrent.Torrent | null
     destroy(callback?: () => void): void
+    on(event: string, callback: (...args: unknown[]) => void): void
+    off(event: string, callback: (...args: unknown[]) => void): void
   }
 
   namespace WebTorrent {
@@ -40,6 +42,7 @@ declare module 'webtorrent' {
       downloaded: number
       uploaded: number
       length: number
+      pieceLength: number
       downloadSpeed: number
       uploadSpeed: number
       timeRemaining: number
@@ -63,14 +66,19 @@ declare module 'webtorrent' {
       destroy(opts?: object, callback?: () => void): void
       on(event: string, callback: (...args: unknown[]) => void): void
       once(event: string, callback: (...args: unknown[]) => void): void
+      off(event: string, callback: (...args: unknown[]) => void): void
     }
 
     interface File {
       name: string
       path: string
       length: number
+      done: boolean
       select?(): void
       deselect?(): void
+      on(event: string, callback: (...args: unknown[]) => void): void
+      once(event: string, callback: (...args: unknown[]) => void): void
+      off(event: string, callback: (...args: unknown[]) => void): void
       createReadStream(opts?: { start?: number; end?: number }): import('stream').Readable
     }
   }
