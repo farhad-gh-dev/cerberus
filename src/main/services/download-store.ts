@@ -20,6 +20,7 @@ export interface DownloadRecord {
   startedAt: string
   completedAt?: string
   priority: number
+  rootPath?: string
 }
 
 interface DownloadStore {

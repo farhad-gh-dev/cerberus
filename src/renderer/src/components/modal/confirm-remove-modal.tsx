@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 
 interface ConfirmRemoveModalProps {
   movieTitle: string
   filePath?: string
+  title?: string
+  message?: ReactNode
+  confirmLabel?: string
+  defaultDelete?: boolean
+  showFilesToggle?: boolean
   onConfirm: (deleteSource: boolean) => void
   onCancel: () => void
 }
@@ -11,10 +16,15 @@ interface ConfirmRemoveModalProps {
 export default function ConfirmRemoveModal({
   movieTitle,
   filePath,
+  title = 'Remove Movie',
+  message,
+  confirmLabel = 'Remove',
+  defaultDelete = false,
+  showFilesToggle = true,
   onConfirm,
   onCancel
 }: ConfirmRemoveModalProps) {
-  const [deleteSource, setDeleteSource] = useState(false)
+  const [deleteSource, setDeleteSource] = useState(defaultDelete)
 
   return (
     <div
@@ -30,9 +40,7 @@ export default function ConfirmRemoveModal({
             <div className="w-10 h-10 rounded-full bg-red-500/15 dark:bg-red-500/20 flex items-center justify-center shrink-0">
               <AlertTriangle size={20} className="text-red-500 dark:text-red-400" />
             </div>
-            <h2 className="text-lg font-semibold text-custom-800 dark:text-custom-50">
-              Remove Movie
-            </h2>
+            <h2 className="text-lg font-semibold text-custom-800 dark:text-custom-50">{title}</h2>
           </div>
           <button
             onClick={onCancel}
@@ -43,12 +51,16 @@ export default function ConfirmRemoveModal({
         </div>
 
         <p className="text-sm text-custom-600 dark:text-custom-300 mb-5">
-          Are you sure you want to remove{' '}
-          <span className="text-custom-800 dark:text-custom-50 font-medium">{movieTitle}</span> from
-          your library?
+          {message ?? (
+            <>
+              Are you sure you want to remove{' '}
+              <span className="text-custom-800 dark:text-custom-50 font-medium">{movieTitle}</span>{' '}
+              from your library?
+            </>
+          )}
         </p>
 
-        {filePath && (
+        {showFilesToggle && (
           <label className="flex items-center gap-3 p-3 rounded-xl bg-custom-200/60 hover:bg-custom-200 dark:bg-white/5 dark:hover:bg-white/10 cursor-pointer transition-colors mb-6">
             <input
               type="checkbox"
@@ -83,7 +95,7 @@ export default function ConfirmRemoveModal({
             onClick={() => onConfirm(deleteSource)}
             className="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors"
           >
-            Remove
+            {confirmLabel}
           </button>
         </div>
       </div>

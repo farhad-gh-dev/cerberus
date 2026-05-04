@@ -33,6 +33,10 @@ export function applyStreamingPriority(torrent: WebTorrent.Torrent, fileExtensio
 /**
  * Re-prioritize a window starting at `byteOffset` after a seek. Returns the
  * piece range marked critical, or null if the torrent has no pieces yet.
+ *
+ * Also drops the head window's priority — under `strategy: 'sequential'` the
+ * picker takes the lowest-indexed critical piece, so leaving the head
+ * critical would starve the seek window indefinitely.
  */
 export function applySeekPriority(
   torrent: WebTorrent.Torrent,
@@ -46,6 +50,14 @@ export function applySeekPriority(
   const window = pieceCount(HEAD_WINDOW_BYTES, pieceLen)
   const start = Math.max(0, target)
   const end = Math.min(total - 1, target + window - 1)
+
+  if (start > 0) {
+    const headEnd = Math.min(start - 1, pieceCount(HEAD_WINDOW_BYTES, pieceLen) - 1)
+    // `deselect` exists at runtime in webtorrent but isn't in the @types we use.
+    const t = torrent as unknown as { deselect?: (start: number, end: number, priority: number) => void }
+    if (headEnd >= 0) t.deselect?.(0, headEnd, 1)
+  }
+
   torrent.critical?.(start, end)
   return { start, end }
 }

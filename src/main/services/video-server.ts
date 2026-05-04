@@ -95,9 +95,11 @@ export function startVideoServer(): Promise<number> {
             const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1
             const chunkSize = end - start + 1
 
-            // External players don't call stream:seek IPC; re-prioritize pieces
-            // server-side. In-app player invokes seekStream directly, so skip it.
-            if (session.external && start > 0) {
+            // Re-prioritize server-side on every seek-sized Range jump. The
+            // in-app player also calls stream:seek IPC, but that's async — by
+            // the time it arrives, file.createReadStream below has already
+            // started waiting on un-prioritized pieces.
+            if (start > 0) {
               const last = lastRangeStartBySession.get(sessionId) ?? -Infinity
               if (Math.abs(start - last) >= SEEK_THRESHOLD_BYTES) {
                 seekStream(sessionId, start)

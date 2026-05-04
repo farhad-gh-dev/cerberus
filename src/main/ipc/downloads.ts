@@ -27,8 +27,12 @@ export function registerDownloadHandlers(): void {
 
   ipcMain.handle('download:pause', async (_event, id: string) => pauseDownload(id))
   ipcMain.handle('download:resume', async (_event, id: string) => resumeDownload(id))
-  ipcMain.handle('download:cancel', async (_event, id: string) => cancelDownload(id))
-  ipcMain.handle('download:delete', async (_event, id: string) => deleteDownload(id))
+  ipcMain.handle('download:cancel', async (_event, id: string, deleteFiles?: boolean) =>
+    cancelDownload(id, deleteFiles)
+  )
+  ipcMain.handle('download:delete', async (_event, id: string, deleteFiles?: boolean) =>
+    deleteDownload(id, deleteFiles)
+  )
   ipcMain.handle('download:list', async () => getDownloads())
   ipcMain.handle('download:peers', async (_event, id: string) => getPeers(id))
 

@@ -37,8 +37,10 @@ const api = {
       ipcRenderer.invoke('download:start-magnet', magnetLink, name),
     pause: (id: string) => ipcRenderer.invoke('download:pause', id),
     resume: (id: string) => ipcRenderer.invoke('download:resume', id),
-    cancel: (id: string) => ipcRenderer.invoke('download:cancel', id),
-    delete: (id: string) => ipcRenderer.invoke('download:delete', id),
+    cancel: (id: string, deleteFiles?: boolean) =>
+      ipcRenderer.invoke('download:cancel', id, deleteFiles),
+    delete: (id: string, deleteFiles?: boolean) =>
+      ipcRenderer.invoke('download:delete', id, deleteFiles),
     list: () => ipcRenderer.invoke('download:list'),
     peers: (id: string) => ipcRenderer.invoke('download:peers', id),
     moveInQueue: (id: string, direction: 'up' | 'down') =>

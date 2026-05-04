@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Play, Trash2, Clock, CircleOff, Library } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { DownloadItem } from '@shared/types'
 import { cn } from '../../utils/cn'
 import type { useDownloadActions } from '../../hooks/use-download-actions'
+import ConfirmRemoveModal from '../modal/confirm-remove-modal'
 
 function ActionButton({
   onClick,
@@ -43,6 +44,7 @@ export default function ActionButtons({
   actions: ReturnType<typeof useDownloadActions>
 }) {
   const navigate = useNavigate()
+  const [confirmMode, setConfirmMode] = useState<'cancel' | 'delete' | null>(null)
   const isDownloading = item.status === 'downloading'
   const isQueued = item.status === 'queued'
   const isOnHold = item.status === 'on-hold'
@@ -52,6 +54,12 @@ export default function ActionButtons({
   const handleViewInLibrary = (): void => {
     if (!item.imdbId) return
     navigate(`/library/${item.imdbId}`)
+  }
+
+  const handleConfirm = (deleteFiles: boolean): void => {
+    if (confirmMode === 'cancel') actions.cancel(deleteFiles)
+    else if (confirmMode === 'delete') actions.delete(deleteFiles)
+    setConfirmMode(null)
   }
 
   return (
@@ -82,7 +90,7 @@ export default function ActionButtons({
       )}
       {!isCompleted && (
         <ActionButton
-          onClick={actions.cancel}
+          onClick={() => setConfirmMode('cancel')}
           title="Cancel"
           className="text-custom-500 dark:text-custom-400 hover:text-red-400"
           hoverBg="hover:bg-red-100 dark:hover:bg-red-500/20"
@@ -101,13 +109,39 @@ export default function ActionButtons({
       )}
       {(isCompleted || isError) && (
         <ActionButton
-          onClick={actions.delete}
+          onClick={() => setConfirmMode('delete')}
           title="Delete"
           className="text-custom-500 dark:text-custom-400 hover:text-red-400"
           hoverBg="hover:bg-red-100 dark:hover:bg-red-500/20"
         >
           <Trash2 size={14} />
         </ActionButton>
+      )}
+
+      {confirmMode && (
+        <ConfirmRemoveModal
+          movieTitle={item.name}
+          title={confirmMode === 'cancel' ? 'Cancel Download' : 'Delete Download'}
+          message={
+            confirmMode === 'cancel' ? (
+              <>
+                Stop downloading{' '}
+                <span className="text-custom-800 dark:text-custom-50 font-medium">{item.name}</span>
+                ?
+              </>
+            ) : (
+              <>
+                Remove{' '}
+                <span className="text-custom-800 dark:text-custom-50 font-medium">{item.name}</span>{' '}
+                from your downloads?
+              </>
+            )
+          }
+          confirmLabel="Confirm"
+          defaultDelete
+          onConfirm={handleConfirm}
+          onCancel={() => setConfirmMode(null)}
+        />
       )}
     </div>
   )

@@ -1,4 +1,6 @@
 import { randomUUID } from 'crypto'
+import { rmSync, statSync } from 'fs'
+import { join } from 'path'
 import type { DownloadItem, PeerInfo } from '../../../shared/types'
 import {
   upsertRecord,
@@ -199,12 +201,21 @@ export async function resumeDownload(id: string): Promise<boolean> {
   return true
 }
 
-export async function cancelDownload(id: string): Promise<boolean> {
+export async function cancelDownload(id: string, deleteFiles = false): Promise<boolean> {
   const session = sessions.get(id)
+  const record = getRecord(id)
+
   if (session) {
-    session.dispose()
+    session.dispose(deleteFiles)
+    if (deleteFiles) {
+      // destroyStore can leave the per-torrent folder behind; sweep it too.
+      removePath(session.getLastSnapshot()?.rootPath ?? record?.rootPath)
+    }
     sessions.delete(id)
+  } else if (deleteFiles) {
+    removePath(record?.rootPath)
   }
+
   removeRecord(id)
   emitProgressUpdate()
   if (sessions.size === 0) stopProgressBroadcast()
@@ -212,8 +223,19 @@ export async function cancelDownload(id: string): Promise<boolean> {
   return true
 }
 
-export async function deleteDownload(id: string): Promise<boolean> {
-  return cancelDownload(id)
+export async function deleteDownload(id: string, deleteFiles = false): Promise<boolean> {
+  return cancelDownload(id, deleteFiles)
+}
+
+function removePath(p: string | undefined): void {
+  if (!p) return
+  try {
+    const stat = statSync(p)
+    if (stat.isDirectory()) rmSync(p, { recursive: true, force: true })
+    else rmSync(p, { force: true })
+  } catch {
+    // already gone, or never existed — ignore
+  }
 }
 
 export async function holdDownload(id: string): Promise<boolean> {
@@ -398,13 +420,17 @@ function persistFromSession(session: TorrentSession): {
   progress: number
   downloaded: number
   totalSize: number
+  rootPath?: string
 } {
   const t = session.getTorrent()
   if (t) {
+    const torrentPath = (t as unknown as { path?: string }).path
+    const rootPath = t.name && torrentPath ? join(torrentPath, t.name) : torrentPath
     return {
       progress: safeNum(t.progress),
       downloaded: safeNum(t.downloaded),
-      totalSize: safeNum(t.length)
+      totalSize: safeNum(t.length),
+      rootPath
     }
   }
   // Torrent already torn down — fall back to the pre-destroy snapshot.
@@ -412,7 +438,8 @@ function persistFromSession(session: TorrentSession): {
   return {
     progress: safeNum(snap?.progress),
     downloaded: safeNum(snap?.downloaded),
-    totalSize: safeNum(snap?.totalSize)
+    totalSize: safeNum(snap?.totalSize),
+    rootPath: snap?.rootPath
   }
 }
 

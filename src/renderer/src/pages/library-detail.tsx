@@ -134,6 +134,7 @@ export default function LibraryDetail() {
         <ConfirmRemoveModal
           movieTitle={movie.title}
           filePath={movie.filePath}
+          showFilesToggle={!!movie.filePath}
           onConfirm={(del) => {
             setShowRemoveModal(false)
             handleRemove(del)

@@ -11,8 +11,8 @@ interface DownloadsState {
   startMagnet: (magnetLink: string, name: string) => Promise<string | undefined>
   pause: (id: string) => Promise<boolean | undefined>
   resume: (id: string) => Promise<boolean | undefined>
-  cancel: (id: string) => Promise<boolean | undefined>
-  delete: (id: string) => Promise<boolean | undefined>
+  cancel: (id: string, deleteFiles?: boolean) => Promise<boolean | undefined>
+  delete: (id: string, deleteFiles?: boolean) => Promise<boolean | undefined>
   hold: (id: string) => Promise<boolean | undefined>
   unhold: (id: string) => Promise<boolean | undefined>
   moveInQueue: (id: string, direction: 'up' | 'down') => Promise<boolean | undefined>
@@ -96,8 +96,10 @@ export const useDownloadsStore = create<DownloadsState>((set) => ({
     ),
   pause: (id) => withErrorToast(() => window.api.download.pause(id), 'Failed to pause download'),
   resume: (id) => withErrorToast(() => window.api.download.resume(id), 'Failed to resume download'),
-  cancel: (id) => withErrorToast(() => window.api.download.cancel(id), 'Failed to cancel download'),
-  delete: (id) => withErrorToast(() => window.api.download.delete(id), 'Failed to delete download'),
+  cancel: (id, deleteFiles) =>
+    withErrorToast(() => window.api.download.cancel(id, deleteFiles), 'Failed to cancel download'),
+  delete: (id, deleteFiles) =>
+    withErrorToast(() => window.api.download.delete(id, deleteFiles), 'Failed to delete download'),
   hold: (id) => withErrorToast(() => window.api.download.hold(id), 'Failed to hold download'),
   unhold: (id) => withErrorToast(() => window.api.download.unhold(id), 'Failed to unhold download'),
   moveInQueue: (id, direction) =>

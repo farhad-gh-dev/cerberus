@@ -1,3 +1,4 @@
+import { join } from 'path'
 import type WebTorrent from 'webtorrent'
 import { getPool } from './pool'
 import { sanitizeMagnet, curatedTrackers } from './policies/magnet'
@@ -50,7 +51,12 @@ export class TorrentSession {
   private torrentRef: WebTorrent.Torrent | null = null
   private announce: AnnounceCoordinator | null = null
   // Captured at teardown so callers can read final numbers after destroy().
-  private lastSnapshot: { progress: number; downloaded: number; totalSize: number } | null = null
+  private lastSnapshot: {
+    progress: number
+    downloaded: number
+    totalSize: number
+    rootPath?: string
+  } | null = null
 
   private metadataTimer: ReturnType<typeof setTimeout> | null = null
   private metadataAttempt = 0
@@ -80,8 +86,13 @@ export class TorrentSession {
     return this.torrentRef
   }
 
-  /** Last-known progress/downloaded/totalSize, captured at teardown. */
-  getLastSnapshot(): { progress: number; downloaded: number; totalSize: number } | null {
+  /** Last-known progress/downloaded/totalSize/rootPath, captured at teardown. */
+  getLastSnapshot(): {
+    progress: number
+    downloaded: number
+    totalSize: number
+    rootPath?: string
+  } | null {
     return this.lastSnapshot
   }
 
@@ -156,8 +167,8 @@ export class TorrentSession {
   }
 
   /** Final teardown — record marked terminal by caller. */
-  dispose(): void {
-    this.tearDownTorrent()
+  dispose(deleteFiles = false): void {
+    this.tearDownTorrent(deleteFiles)
     this.transition('disposed', 'disposed')
   }
 
@@ -345,7 +356,7 @@ export class TorrentSession {
 
   // ────────── teardown ──────────
 
-  private tearDownTorrent(): void {
+  private tearDownTorrent(deleteFiles = false): void {
     this.clearMetadataTimer()
     this.stopStallProbe()
 
@@ -356,17 +367,20 @@ export class TorrentSession {
 
     const t = this.torrentRef
     if (t) {
+      const torrentPath = (t as unknown as { path?: string }).path
+      const rootPath =
+        t.name && torrentPath ? join(torrentPath, t.name) : torrentPath || this.savePath
       this.lastSnapshot = {
         progress: Number.isFinite(t.progress) ? t.progress : 0,
         downloaded: Number.isFinite(t.downloaded) ? t.downloaded : 0,
-        totalSize: Number.isFinite(t.length) ? t.length : 0
+        totalSize: Number.isFinite(t.length) ? t.length : 0,
+        rootPath
       }
     }
     this.torrentRef = null
     if (t && !t.destroyed) {
       try {
-        // Never destroyStore here — caller decides via cancelDownload.
-        t.destroy()
+        t.destroy({ destroyStore: deleteFiles })
       } catch {
         // ignore
       }

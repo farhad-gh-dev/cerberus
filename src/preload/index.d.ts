@@ -44,8 +44,8 @@ declare global {
         startMagnet: (magnetLink: string, name: string) => Promise<string>
         pause: (id: string) => Promise<boolean>
         resume: (id: string) => Promise<boolean>
-        cancel: (id: string) => Promise<boolean>
-        delete: (id: string) => Promise<boolean>
+        cancel: (id: string, deleteFiles?: boolean) => Promise<boolean>
+        delete: (id: string, deleteFiles?: boolean) => Promise<boolean>
         list: () => Promise<DownloadItem[]>
         peers: (id: string) => Promise<PeerInfo[]>
         moveInQueue: (id: string, direction: 'up' | 'down') => Promise<boolean>

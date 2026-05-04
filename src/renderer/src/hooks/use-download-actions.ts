@@ -14,8 +14,8 @@ export function useDownloadActions(id: string) {
   return {
     pause: useCallback(() => pause(id), [pause, id]),
     resume: useCallback(() => resume(id), [resume, id]),
-    cancel: useCallback(() => cancel(id), [cancel, id]),
-    delete: useCallback(() => del(id), [del, id]),
+    cancel: useCallback((deleteFiles?: boolean) => cancel(id, deleteFiles), [cancel, id]),
+    delete: useCallback((deleteFiles?: boolean) => del(id, deleteFiles), [del, id]),
     hold: useCallback(() => hold(id), [hold, id]),
     unhold: useCallback(() => unhold(id), [unhold, id])
   }
