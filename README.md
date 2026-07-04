@@ -21,12 +21,12 @@
   <img src="screenshots/library.png" width="40%" alt="Library" />
 </p>
 <p align="center">
-  <img src="screenshots/movie-details.png" width="40%" alt="Download Detail" />
-  <img src="screenshots/stream.png" width="40%" alt="Downloads" />
+  <img src="screenshots/movie-details.png" width="40%" alt="Movie Details" />
+  <img src="screenshots/stream.png" width="40%" alt="Stream" />
 </p>
 <p align="center">
-  <img src="screenshots/downloads.png" width="40%" alt="Magnet Modal" />
-  <img src="screenshots/download-detail.png" width="40%" alt="Settings" />
+  <img src="screenshots/downloads.png" width="40%" alt="Downloads" />
+  <img src="screenshots/download-detail.png" width="40%" alt="Download Detail" />
 </p>
 
 ---
@@ -85,7 +85,7 @@ Cerberus is an all-in-one desktop application for discovering, downloading, stre
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/cerberus.git
+git clone https://github.com/farhad-gh-dev/cerberus.git
 cd cerberus
 ```
 
