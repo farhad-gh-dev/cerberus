@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="resources/icon.png" width="100" alt="Cerberus logo" />
 </p>
 
@@ -97,7 +97,15 @@ npm install
 
 ### 3. Configure your TMDb API key
 
-Launch the app and navigate to **Settings** to enter your TMDb API key, or create a `settings.json` in your OS user-data directory with:
+Launch the app and navigate to **Settings** to enter your TMDb API key, or manually create a `settings.json` file in Electron's per-OS user-data directory for Cerberus:
+
+| OS      | Path                                             |
+| ------- | ------------------------------------------------- |
+| Windows | `%APPDATA%\cerberus\settings.json`                 |
+| macOS   | `~/Library/Application Support/cerberus/settings.json` |
+| Linux   | `~/.config/cerberus/settings.json`                 |
+
+with the following contents:
 
 ```json
 {
