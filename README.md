@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="resources/icon.png" width="100" alt="Cerberus logo" />
 </p>
 
